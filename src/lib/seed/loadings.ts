@@ -1,0 +1,78 @@
+// Loading matrix (Blueprint Deliverable 2). SERVER-ONLY — never import from client
+// components: the weights are business IP and exposing them would let users forge scores.
+// Blueprint (R)-items 2/4/6/8 are encoded here as direction -1 (equivalent to reverse
+// coding for that scale); item.reverse stays false to avoid double negation.
+
+import type { Loading } from '@/lib/engine/types';
+
+type L = [itemId: string, scaleId: string, weight: number, direction: 1 | -1];
+
+const M: L[] = [
+  ['i01', 'big5_E', 1.0, 1],
+  ['i02', 'big5_E', 1.0, -1],
+  ['i03', 'big5_A', 1.0, 1], ['i03', 'emp_aff', 0.4, 1],
+  ['i04', 'big5_A', 1.0, -1], ['i04', 'dark_mean', 0.4, 1],
+  ['i05', 'big5_C', 1.0, 1],
+  ['i06', 'big5_C', 1.0, -1], ['i06', 'adhs', 0.4, 1],
+  ['i07', 'big5_N', 1.0, 1], ['i07', 'att_anx', 0.3, 1],
+  ['i08', 'big5_N', 1.0, -1], ['i08', 'dark_bold', 0.3, 1],
+  ['i09', 'big5_O', 1.0, 1],
+  ['i10', 'big5_O', 1.0, 1],
+  ['i11', 'adhs', 1.0, 1],
+  ['i12', 'adhs', 1.0, 1], ['i12', 'big5_C', 0.4, -1],
+  ['i13', 'adhs', 1.0, 1],
+  ['i14', 'adhs', 1.0, 1], ['i14', 'big5_C', 0.3, -1],
+  ['i15', 'adhs', 1.0, 1],
+  ['i16', 'adhs', 1.0, 1], ['i16', 'hsp', 0.3, 1],
+  ['i17', 'adhs', 1.0, 1], ['i17', 'dark_disinh', 0.6, 1],
+  ['i18', 'autism', 1.0, 1], ['i18', 'emp_cog', 0.5, -1],
+  ['i19', 'autism', 1.0, 1], ['i19', 'big5_C', 0.4, 1],
+  ['i20', 'autism', 1.0, 1], ['i20', 'big5_N', 0.3, 1],
+  ['i21', 'autism', 1.0, 1], ['i21', 'hsp', 0.6, 1],
+  ['i22', 'autism', 1.0, 1], ['i22', 'big5_O', 0.3, 1],
+  ['i23', 'autism', 1.0, 1],
+  ['i24', 'autism', 0.7, 1], ['i24', 'big5_E', 0.6, -1],
+  ['i25', 'autism', 0.7, 1], ['i25', 'big5_E', 0.7, -1], ['i25', 'hsp', 0.5, 1],
+  ['i26', 'masking', 1.0, 1], ['i26', 'big5_N', 0.3, 1],
+  ['i27', 'masking', 1.0, 1], ['i27', 'autism', 0.4, 1],
+  ['i28', 'masking', 1.0, 1], ['i28', 'autism', 0.4, 1],
+  ['i29', 'masking', 1.0, 1], ['i29', 'autism', 0.4, 1],
+  ['i30', 'dark_mean', 1.0, 1], ['i30', 'emp_cog', 0.3, 1],
+  ['i31', 'dark_mean', 1.0, 1], ['i31', 'emp_aff', 0.7, -1],
+  ['i32', 'dark_bold', 1.0, 1], ['i32', 'big5_N', 0.3, -1],
+  ['i33', 'dark_disinh', 1.0, 1], ['i33', 'adhs', 0.6, 1],
+  ['i34', 'dark_grand', 1.0, 1], ['i34', 'big5_A', 0.3, -1],
+  ['i35', 'dark_bold', 1.0, 1], ['i35', 'big5_E', 0.4, 1],
+  ['i36', 'dark_disinh', 1.0, 1], ['i36', 'big5_C', 0.3, -1],
+  ['i37', 'dark_mean', 1.0, 1], ['i37', 'big5_A', 0.4, -1],
+  ['i38', 'emp_cog', 1.0, 1],
+  ['i39', 'emp_cog', 1.0, 1], ['i39', 'autism', 0.3, -1],
+  ['i40', 'emp_aff', 1.0, 1], ['i40', 'hsp', 0.4, 1],
+  ['i41', 'emp_aff', 1.0, 1], ['i41', 'hsp', 0.4, 1],
+  ['i42', 'att_anx', 1.0, 1], ['i42', 'rejection_sens', 0.5, 1],
+  ['i43', 'att_anx', 1.0, 1], ['i43', 'rejection_sens', 0.5, 1],
+  ['i44', 'att_avoid', 1.0, 1],
+  ['i45', 'att_avoid', 1.0, 1], ['i45', 'dark_bold', 0.3, 1],
+  ['i46', 'att_secure', 1.0, 1], ['i46', 'att_avoid', 0.6, -1],
+  ['i47', 'love_klartext', 1.0, 1],
+  ['i48', 'love_momente', 1.0, 1],
+  ['i49', 'love_anpacken', 1.0, 1], ['i49', 'big5_A', 0.3, 1],
+  ['i50', 'love_naehe', 1.0, 1],
+  ['i51', 'love_wachstum', 1.0, 1], ['i51', 'big5_O', 0.3, 1],
+  ['i52', 'love_zeichen', 1.0, 1],
+  ['i53', 'hsp', 1.0, 1], ['i53', 'big5_N', 0.3, 1], ['i53', 'autism', 0.3, 1],
+  ['i54', 'hsp', 1.0, 1], ['i54', 'emp_aff', 0.4, 1],
+  ['i55', 'rejection_sens', 1.0, 1], ['i55', 'big5_N', 0.4, 1],
+  ['i56', 'rejection_sens', 1.0, 1], ['i56', 'att_anx', 0.4, 1],
+  ['i57', 'alexithymia', 1.0, 1], ['i57', 'emp_aff', 0.3, -1], ['i57', 'emp_cog', 0.3, -1],
+  ['sd01', 'sd', 1.0, 1],
+  ['sd02', 'sd', 1.0, 1],
+  ['sd03', 'sd', 1.0, 1],
+];
+
+export const LOADINGS: Loading[] = M.map(([itemId, scaleId, weight, direction]) => ({
+  itemId,
+  scaleId,
+  weight,
+  direction,
+}));
