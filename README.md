@@ -1,96 +1,143 @@
-# Facettn (working title)
+# Facettn
 
-Mobile-first multidimensional personality self-test — **Edutainment/self-reflection,
-explicitly NOT a diagnostic or screening instrument** (MDR Rule 11 positioning).
-One questionnaire (57 substantive items + 3 attention checks + 3 social-desirability
-items + optional PHQ-9/GAD-7 wellbeing module), items cross-load onto multiple scales,
-result is a 10-axis radar profile with one of 14 archetypes.
+**A multidimensional personality self-test that stores nothing about you.**
 
-Built from the three planning docs (Masterplan / Blueprint Phase 2 / Dev-Spec Phase 3).
+No account. No e-mail gate. No database. No cookies, no analytics, no tracking.
+Your answers are scored **in your browser** and your result lives in the URL
+fragment — the part after `#`, which browsers never send to a server.
 
-## Quick start (local)
+German-language instrument · MIT licensed · [What this is not](#what-this-is-not)
 
-```bash
-npm ci
-npm run dev        # http://localhost:3000 — file store in .data/, mails logged to console
-npm test           # engine unit tests (spec fixtures 1–5 + properties), 31 tests
-npm run typecheck && npm run lint
+---
+
+## Why this exists
+
+Most online personality tests follow the same script: answer forty questions, get a
+teaser, hit a wall. *Enter your e-mail to unlock your full result.* The test was
+never the product. You were.
+
+Facettn is the counter-example. The full evaluation appears immediately, at full
+depth. There is no e-mail field because there is no list. There is no delete
+function because there is no database. And because privacy promises are worth
+nothing if nobody can check them, the entire thing is open source — the questions,
+the weight of every single answer, the formulas, the wording.
+
+## How the no-storage part actually works
+
+The trick is unspectacular and thirty years old: the **URL fragment**.
+
+```
+facettn.de/ergebnis#v1.4315224…
+                    └─ never leaves the browser
 ```
 
-Production mode requires `SESSION_SECRET` (see `.env.example`):
+Browsers treat everything after `#` differently from the rest of a URL. It is not
+in the HTTP request line, not in `Referer` headers, not in any server log. It
+exists only on the devices that hold the link.
 
-```bash
-SESSION_SECRET=... npm run build && SESSION_SECRET=... npm start
-BASE=http://localhost:3000 npx tsx scripts/smoke.ts   # 25-check API E2E
-```
+The payload is deliberately boring: one digit per answer, in canonical item order,
+prefixed with a format version. Not encrypted, not obfuscated — you can decode your
+own link by hand. A system whose data handling can be verified by reading a URL does
+not need to be believed.
+
+On page load the browser decodes those digits, runs the scoring engine locally and
+renders the report. You can switch off your network after loading and it still works.
+
+Two consequences worth knowing:
+
+- **The link is the result.** Bookmark it to come back. Lose it and the result is
+  gone — for everyone, because it never existed anywhere else.
+- **Sharing means sharing.** Anyone with the link sees the profile. The optional
+  wellbeing module (PHQ-9/GAD-7) is stripped from share links automatically; it
+  contains the item about self-harm and has no business travelling in a shared URL.
+
+## The instrument
+
+| | |
+|---|---|
+| Items | 119 core + 3 attention checks + 3 social-desirability + 16 optional wellbeing |
+| Duration | ~15 minutes |
+| Scales | 5 Big Five domains with 3 facets each, ADHD (2 facets), autistic traits (6 facets), masking, 4 dark-trait scales, cognitive/affective empathy, 3 attachment scales, 6 love styles, 3 sensitivity scales |
+| Output | Archetype, 10-axis radar, facet-level bars, detected cross-dimension patterns, myths vs. facts, practical suggestions |
+
+Items deliberately **cross-load** onto several scales. That is not a shortcut to
+fewer questions — it reflects that traits genuinely overlap. Someone who acts on
+impulse may be doing so from ADHD-typical impulse control or from a considered
+disregard for rules; the surrounding items decide which reading holds.
+
+The test is long on purpose. With twenty questions you cannot tell whether someone
+is disorganised *and* unreliable or disorganised *but* rock-solid — and that
+distinction is the interesting part. Hence facets under every domain.
+
+### What this is not
+
+Not a diagnostic or screening instrument. It describes personality tendencies —
+"Züge", not conditions. Nothing here detects, screens for or diagnoses anything, and
+the wording is kept that way deliberately (see the note in `src/lib/content/copy.ts`).
+For real clarity under real distress you need people, not a website.
+
+## Licensing of the items
+
+Every core item is an **original German formulation** written for this project.
+They are informed by published *constructs* — the Big Five facet structure
+(IPIP/BFI-2), the DSM-5 attention and hyperactivity domains, camouflaging research,
+the triarchic psychopathy model, ECR attachment dimensions, sensory-processing
+sensitivity — but reproduce no wording from any copyrighted scale. That keeps the
+repository MIT-clean.
+
+The only verbatim instruments are **PHQ-9 and GAD-7** (German version; Löwe,
+Spitzer, Zipfel & Herzog, translation Universitätsklinik Heidelberg), which the
+rights holder released for free reproduction.
+
+This project is not affiliated with the authors of any referenced original instrument.
 
 ## Architecture
 
 ```
-src/lib/engine/      Pure scoring engine (no DB/framework). Reverse coding, cross-loading
-                     normalization, Φ-percentiles, bands, validity flags, archetype
-                     resolution, match formula, wellbeing sums + crisis guardrail.
-src/lib/seed/        SSOT for items (client-safe), loadings (SERVER-ONLY), scales,
-                     archetypes, norms. scripts/seed.ts pushes these into Supabase.
-src/lib/store/       Persistence adapter: FileStore (.data/, local dev) or SupabaseStore
-                     (service role, eu-central-1) — selected via env.
-src/lib/server/      Scoring glue, cookie signing (HMAC), email hash/AES-256-GCM
-                     encryption, in-memory rate limiting, Brevo mails, match insights.
-src/app/api/         session / responses (batch autosave) / complete (idempotent,
-                     server-side scoring) / email-gate / result (+teaser) / match /
-                     og (Satori share image) / confirm (DOI) / me (GDPR delete).
-src/app/             / (landing) /test (quiz) /gate /ergebnis/[token]
-                     /vergleich/[token] /archetyp/[slug] (SSG) /datenschutz /impressum
-supabase/migrations/ Full schema + RLS (deny-all except reference reads).
+src/lib/engine/      Pure scoring: reverse coding, cross-loading normalization,
+                     Φ-percentiles, bands, validity flags, archetype resolution,
+                     match formula. No I/O, fully unit-tested.
+src/lib/seed/        Items + loading matrix (co-located), scales with facets,
+                     archetypes, published norms.
+src/lib/share/       The URL payload codec.
+src/lib/content/     Dimension copy, cross-dimension pattern rules, legal wording.
+src/lib/profile.ts   Answers → full profile. Runs client-side.
+src/app/             Landing, /test, /ergebnis, /vergleich, /transparenz,
+                     /archetyp/[slug] (static), legal pages.
 ```
 
-**Security/compliance invariants (do not weaken):**
+There is no `api/` directory, no database client and no ORM. That absence is the
+feature.
 
-- Scoring runs **only server-side**; the loading matrix (`seed/loadings.ts`) is never
-  imported by client components.
-- Consent (a) is required to create a session (403 otherwise); b/c/d are recorded
-  audit-proof with text version + hashed IP. Match requires **mutual** consent (d).
-- Crisis guardrail: PHQ-9 item 9 > 0 or sum ≥ 15 → non-dismissable banner above all
-  results (also on the gate teaser).
-- Result e-mails contain only the token link, never scores. OG images contain only
-  archetype name + radar silhouette.
-- Copy is MDR-sensitive: "Züge/Tendenzen", never "Diagnose/Screening/Verdacht auf".
-  Verbatim legal copy lives in `src/lib/content/copy.ts`.
+## Development
 
-## Engagement mechanics (completion ≥ 70 % target)
+```bash
+npm ci
+npm run dev        # http://localhost:3000
+npm test           # 48 unit tests
+npm run typecheck && npm run lint && npm run build
+```
 
-- 5 blocks = 5 collectible "Facetten" with unlock celebrations at block boundaries.
-- Segmented sticky progress bar (per-block fill), question count + remaining minutes.
-- One question per screen, tap-to-advance with confirmation flash; keyboard users get
-  an explicit "Weiter" button (a11y: no auto-advance on focus).
-- localStorage autosave + resume ("Willkommen zurück"); server batch sync every 4 answers.
-- Gate after the last question with blur teaser; skip link in every variant (no dark pattern).
+Everything is statically renderable — no server-side state, no environment
+variables required to run or deploy. Host it anywhere that serves files.
 
-## Production deployment
+## Contributing
 
-1. Supabase project in `eu-central-1` → run `supabase/migrations/0001_init.sql`,
-   verify `select tablename from pg_tables where schemaname='public' and not rowsecurity;`
-   is **empty**, then `npm run seed:supabase`.
-2. Vercel: `vercel.json` pins `fra1`. Env: `SESSION_SECRET`, `SUPABASE_URL`,
-   `SUPABASE_SERVICE_ROLE_KEY`, `BREVO_API_KEY`, `EMAIL_FROM`, `APP_BASE_URL`,
-   optionally `NEXT_PUBLIC_PLAUSIBLE_DOMAIN`.
-3. Enable the pg_cron purge job (commented at the bottom of the migration).
-4. Swap the in-memory rate limiter for @upstash/ratelimit in `middleware.ts` once
-   traffic runs on more than one function instance.
-5. Sign DPAs: Vercel, Supabase, Brevo, Plausible (and Sentry if added).
+Found a badly worded item, a questionable weight, or a flaw in the scoring? That is
+a welcome contribution, not a nuisance. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## Known gaps / before launch (Phase 0 gates)
+## Status and honest caveats
 
-- **Legal review is mandatory** (MDR intended purpose, HWG, GDPR Art. 9 concept,
-  final item-license check). Impressum/Datenschutz contain `[TODO]` placeholders.
-- **Blueprint inconsistency:** the Phase-2 doc claims 58 items but enumerates 57
-  (i01–i57). Implemented: the 57 enumerated items.
-- **Norms:** BFI-2 DE_total (Danner 2019) + pooled PHQ-9/GAD-7 are live; all other
-  scales use score100 as provisional pseudo-percentile until own norm data exists
-  (N ≥ 1000 → switch). ASRS Prozentrang tables are paywalled — add as
-  `percentile_table` when the manual is available.
-- Own items (autism/masking/dark/love/HSP/RS/alexithymia) are legally independent
-  but **not yet psychometrically validated** — pilot study (N ≥ 300) before scale
-  claims.
-- No Playwright E2E yet; `scripts/smoke.ts` covers the API flow (25 checks).
-- Sentry EU + A/B testing (server-side bucketing) not wired yet.
+- The self-written items are **not yet psychometrically validated**. A pilot study
+  (N ≥ 300) is needed before any claim about reliability or factor structure.
+- Percentiles exist only for the Big Five domains (German BFI-2 reference sample,
+  Danner et al. 2019, N = 770). Other scales report raw values without population
+  comparison rather than inventing one.
+- Cross-loading weights are theory-driven starting values awaiting empirical
+  calibration.
+- The Impressum and privacy pages contain `[TODO]` placeholders. German law requires
+  a real Impressum before a public deployment.
+
+## License
+
+MIT — see [LICENSE](LICENSE).

@@ -1,10 +1,15 @@
 import Link from 'next/link';
 import { ARCHETYPES } from '@/lib/seed/archetypes';
 import { BLOCK_META } from '@/lib/content/copy';
+import { PAYLOAD_ORDER_CORE } from '@/lib/seed/items';
+import { SCALES } from '@/lib/seed/scales';
 import { radarGridPoints, radarPolygonPoints } from '@/lib/radar';
 
-// Decorative hero radar (static sample profile, purely illustrative).
 const HERO_VALUES = [72, 58, 45, 66, 88, 74, 62, 38, 70, 55];
+const SCALE_COUNT = SCALES.filter(
+  (s) => s.dimensionGroup !== 'validity' && s.dimensionGroup !== 'wellbeing',
+).length;
+const MINUTES = Math.round((PAYLOAD_ORDER_CORE.length * 7) / 60);
 
 function HeroRadar() {
   const size = 300;
@@ -57,17 +62,20 @@ export default function LandingPage() {
             Alle Facetten.
           </h1>
           <p className="sub">
-            ADHS-Züge, Autismus-Züge, Big Five, Bindungsstil, Love Styles und Empathie —
-            in einem gemeinsamen Profil statt in zwölf Schubladen. Wissenschaftlich
-            fundiert, verständlich erklärt.
+            ADHS-Züge, autistische Züge, Big Five mit Facetten, Bindungsstil, Empathie und
+            Love Styles — in einem gemeinsamen Profil statt in zwölf Schubladen.
+          </p>
+          <p className="sub" style={{ fontWeight: 600, color: 'var(--ink)' }}>
+            Ohne E-Mail. Ohne Konto. Ohne Datenbank.
           </p>
           <div style={{ maxWidth: 340, margin: '26px 0 10px' }}>
             <Link href="/test" className="btn">
-              Test starten — ca. 8 Minuten
+              Test starten — {MINUTES} Minuten
             </Link>
           </div>
           <p style={{ fontSize: '0.85rem', color: 'var(--ink-faint)' }}>
-            Kostenlos · anonym startbar · keine Diagnose, sondern Selbstreflexion
+            Das vollständige Ergebnis erscheint sofort · nichts wird gespeichert ·{' '}
+            <Link href="/transparenz">warum das geht</Link>
           </p>
         </div>
         <div className="hero-figure">
@@ -77,9 +85,10 @@ export default function LandingPage() {
 
       <div className="stat-row">
         {[
-          ['10', 'Dimensionen'],
+          [String(PAYLOAD_ORDER_CORE.length), 'Fragen'],
+          [String(SCALE_COUNT), 'Skalen'],
           ['14', 'Archetypen'],
-          ['~8', 'Minuten'],
+          ['0', 'gespeicherte Daten'],
         ].map(([num, label]) => (
           <div className="stat-cell" key={label}>
             <div className="num">{num}</div>
@@ -88,14 +97,35 @@ export default function LandingPage() {
         ))}
       </div>
 
+      <section className="card manifesto">
+        <h2 style={{ marginTop: 0 }}>Der Deal, den es hier nicht gibt</h2>
+        <p>
+          Die meisten Persönlichkeitstests im Netz funktionieren nach demselben Muster: Du
+          beantwortest vierzig Fragen, siehst einen Teaser — und dann kommt die Wand. E-Mail
+          eintragen, um „dein vollständiges Ergebnis freizuschalten“. Der Test war nie das
+          Produkt. Du warst es.
+        </p>
+        <p>
+          Hier gibt es diese Wand nicht. Das vollständige Ergebnis erscheint sofort, in voller
+          Tiefe. Es gibt keine E-Mail-Abfrage, weil es keine Liste gibt. Es gibt keine
+          Löschfunktion, weil es keine Datenbank gibt. Die Auswertung wird in deinem Browser
+          gerechnet, und dein Ergebnis steckt anschließend im Link selbst — in einem Teil der
+          Adresse, den Browser prinzipbedingt nie an einen Server senden.
+        </p>
+        <p style={{ marginBottom: 0 }}>
+          Das ist überprüfbar statt versprochen: Der komplette Quellcode ist offen.{' '}
+          <Link href="/transparenz">Hier steht, wie es funktioniert →</Link>
+        </p>
+      </section>
+
       <section className="card">
-        <h2 style={{ marginTop: 0 }}>So funktioniert’s</h2>
+        <h2 style={{ marginTop: 0 }}>So läuft es ab</h2>
         <ol className="steps">
           <li>
-            <strong>Fünf Facetten beantworten.</strong> Kurze Frageblöcke, eine Frage pro
-            Screen, Fortschritt wird automatisch gesichert.
+            <strong>Sechs Abschnitte beantworten.</strong> Eine Frage pro Bildschirm, Fortschritt
+            wird lokal gesichert — du kannst jederzeit pausieren.
             <div className="facet-preview">
-              {[1, 2, 3, 4, 5].map((b) => (
+              {[1, 2, 3, 4, 5, 6].map((b) => (
                 <span key={b} className="facet-chip">
                   <span className="idx">{BLOCK_META[b].num}</span> {BLOCK_META[b].name}
                 </span>
@@ -103,26 +133,29 @@ export default function LandingPage() {
             </div>
           </li>
           <li>
-            <strong>Profil & Archetyp erhalten.</strong> Ein Radar über alle Dimensionen,
-            Stärken zuerst, mit klarer Einordnung — was dein Ergebnis bedeutet und was nicht.
+            <strong>Tiefenauswertung erhalten.</strong> Nicht nur Gesamtwerte, sondern Facetten
+            darunter — plus die Muster, die sich aus deren Zusammenspiel ergeben. Mit Stärken
+            zuerst und einem klaren „was das nicht bedeutet“.
           </li>
           <li>
-            <strong>Teilen & vergleichen.</strong> Lege dein Profil über das einer anderen
-            Person — ausschließlich, wenn beide ausdrücklich zustimmen.
+            <strong>Behalten oder vergleichen.</strong> Der Link ist dein Ergebnis: als Lesezeichen
+            speichern, weitergeben oder mit dem Profil einer anderen Person überlagern.
           </li>
         </ol>
       </section>
 
       <section className="card">
-        <h2 style={{ marginTop: 0 }}>Warum ein Test statt zwölf</h2>
+        <h2 style={{ marginTop: 0 }}>Warum {PAYLOAD_ORDER_CORE.length} Fragen und nicht 20</h2>
         <p>
-          Persönlichkeit ist verwoben: ADHS- und Autismus-Züge überlappen sich, Sensibilität
-          färbt Bindung, Empathie hat zwei Gesichter. Unsere Fragen laden deshalb bewusst auf
-          mehrere Dimensionen gleichzeitig — psychometrisch modelliert statt schubladensortiert.
-          So entsteht ein Gesamtbild, das Zusammenhänge zeigt, die Einzeltests nicht sehen können.
+          Weil kurze Tests genau das verlieren, was interessant ist. Ein mittlerer Wert bei
+          Gewissenhaftigkeit kann heißen, dass alles im Mittelfeld liegt — oder dass maximale
+          Verlässlichkeit auf völliges Ordnungschaos trifft. Dieselbe Zahl, zwei grundverschiedene
+          Menschen.
         </p>
-        <p style={{ fontSize: '0.88rem', color: 'var(--ink-faint)' }}>
-          Zur Unterhaltung und Selbstreflexion — kein Diagnose- oder Screening-Instrument.
+        <p style={{ marginBottom: 0 }}>
+          Deshalb liegt unter jeder Hauptdimension die Facettenebene, und deshalb dauert das hier
+          ein Viertelstündchen statt drei Minuten. Fragen zählen dabei bewusst auf mehrere Skalen
+          gleichzeitig — so, wie sich Persönlichkeitsmerkmale auch in der Realität überlappen.
         </p>
       </section>
 

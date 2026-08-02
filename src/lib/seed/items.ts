@@ -1,177 +1,344 @@
-// Item pool (Blueprint Deliverable 1) + dramaturgy order (Deliverable 8).
-// NOTE: The Blueprint header says "58 Items" but enumerates 57 (i01–i57) — known
-// upstream inconsistency, documented in the README. We implement the 57 enumerated items.
-// This module is CLIENT-SAFE: it contains item texts only. Loadings live in loadings.ts
-// and must never be imported by client components (business IP + anti-tampering).
+// The item pool — single source of truth for both the questionnaire and the
+// loading matrix. Items and their loadings live together on purpose: this is an
+// open-source instrument, so the scoring must be as readable as the questions.
+//
+// LICENSING: every core item below is an original German formulation written for
+// this project. They are informed by published *constructs* (IPIP/BFI-2 facet
+// structure, DSM-5 attention/hyperactivity domains, camouflaging research, the
+// triarchic psychopathy model, ECR attachment dimensions, sensory-processing
+// sensitivity) but reproduce no wording from any copyrighted scale. That keeps the
+// whole repository MIT-clean. The only verbatim instruments are PHQ-9 and GAD-7,
+// which their rights holder released for free reproduction — see ATTRIBUTIONS.
+//
+// A facet item automatically also loads its parent domain at full weight, so the
+// domain score is computed from all of its items rather than from facet averages.
 
-import type { ItemDef } from '@/lib/engine/types';
+import type { ItemDef, Loading } from '@/lib/engine/types';
+import { SCALE_BY_ID } from './scales';
 
-interface RawItem {
+/** [scaleId, weight, direction] — direction -1 means the item counts inverted. */
+type Load = [scaleId: string, weight: number, direction: 1 | -1];
+
+interface Spec {
   id: string;
-  textDe: string;
-  isAttentionCheck?: boolean;
-  isSocialDesirability?: boolean;
-  expectedValue?: number;
-  module?: 'core' | 'wellbeing';
-  responseFormat?: 'likert5' | 'phq4';
+  text: string;
+  /** Primary scale, always weight 1.0. Prefix with '-' to load it inverted. */
+  primary: string;
+  /** Additional cross-loadings. */
+  also?: Load[];
+  attentionCheck?: number;
+  socialDesirability?: boolean;
 }
 
-const CORE: RawItem[] = [
-  // Block A — Big Five (Mini-IPIP constructs, own German translations; IPIP public domain)
-  { id: 'i01', textDe: 'Ich gehe gern auf andere Menschen zu.' },
-  { id: 'i02', textDe: 'Ich halte mich im Hintergrund.' },
-  { id: 'i03', textDe: 'Ich habe Mitgefühl mit anderen.' },
-  { id: 'i04', textDe: 'Ich interessiere mich wenig für die Probleme anderer.' },
-  { id: 'i05', textDe: 'Ich erledige Aufgaben zuverlässig.' },
-  { id: 'i06', textDe: 'Ich lasse Dinge oft liegen.' },
-  { id: 'i07', textDe: 'Ich mache mir schnell Sorgen.' },
-  { id: 'i08', textDe: 'Ich bleibe auch unter Druck ruhig.' },
-  { id: 'i09', textDe: 'Ich habe eine lebhafte Vorstellungskraft.' },
-  { id: 'i10', textDe: 'Ich interessiere mich für neue Ideen und Perspektiven.' },
-  // Block B — ADHS (ASRS-v1.1 constructs; WHO copyright notice shown in the app footer)
-  { id: 'i11', textDe: 'Ich habe Probleme, die letzten Details einer Aufgabe abzuschließen.' },
-  { id: 'i12', textDe: 'Ich habe Schwierigkeiten, Dinge zu ordnen, wenn Organisation gefragt ist.' },
-  { id: 'i13', textDe: 'Ich vergesse Termine oder Verpflichtungen.' },
-  { id: 'i14', textDe: 'Ich schiebe Aufgaben auf, die viel Nachdenken erfordern.' },
-  { id: 'i15', textDe: 'Ich bin zappelig, wenn ich lange sitzen muss.' },
-  { id: 'i16', textDe: 'Ich lasse mich leicht durch Geräusche oder meine Umgebung ablenken.' },
-  { id: 'i17', textDe: 'Ich rede in Gesprächen manchmal zu viel oder unterbreche andere.' },
-  // Block C — Autismus-Züge (own items, construct-inspired, no protected wording)
-  { id: 'i18', textDe: 'Soziale Signale wie Andeutungen oder Ironie entgehen mir oft.' },
-  { id: 'i19', textDe: 'Mir fallen Details auf, die andere übersehen.' },
-  { id: 'i20', textDe: 'Feste Routinen geben mir Halt; Veränderungen stressen mich.' },
-  { id: 'i21', textDe: 'Bestimmte Geräusche, Licht oder Stoffe empfinde ich als überwältigend.' },
-  { id: 'i22', textDe: 'In ein Thema, das mich fesselt, tauche ich stundenlang ein.' },
-  { id: 'i23', textDe: 'Ich verstehe Aussagen oft wörtlich.' },
-  { id: 'i24', textDe: 'Small Talk fällt mir schwer und strengt mich an.' },
-  { id: 'i25', textDe: 'Nach viel Kontakt mit Menschen bin ich völlig erschöpft.' },
-  // Block D — Masking (own items)
-  { id: 'i26', textDe: 'In Gesellschaft spiele ich eine Rolle, statt ich selbst zu sein.' },
-  { id: 'i27', textDe: 'Ich beobachte andere genau, um zu kopieren, wie man sich „richtig“ verhält.' },
-  { id: 'i28', textDe: 'Ich zwinge mich zu Blickkontakt, obwohl es mir unangenehm ist.' },
-  { id: 'i29', textDe: 'Nach sozialen Situationen bin ich erschöpft vom Sich-Zusammenreißen.' },
-  // Block E — Dark Traits (own items, TriPM/LSRP constructs, responsible framing)
-  { id: 'i30', textDe: 'Ich weiß, wie ich Menschen dazu bringe, das zu tun, was ich will.' },
-  { id: 'i31', textDe: 'Das Leid anderer berührt mich weniger als die meisten Menschen.' },
-  { id: 'i32', textDe: 'Risiken oder gefährliche Situationen reizen mich eher, als dass sie mir Angst machen.' },
-  { id: 'i33', textDe: 'Ich handle oft im Moment, ohne an Konsequenzen zu denken.' },
-  { id: 'i34', textDe: 'Ich fühle mich vielen Menschen überlegen.' },
-  { id: 'i35', textDe: 'In fremden Situationen trete ich selbstsicher und dominant auf.' },
-  { id: 'i36', textDe: 'Regeln sehe ich eher als Vorschlag denn als Verpflichtung.' },
-  { id: 'i37', textDe: 'Ich setze meine Interessen durch, auch wenn andere dabei zu kurz kommen.' },
-  // Block F — Empathie kognitiv vs. affektiv (own items)
-  { id: 'i38', textDe: 'Ich erkenne meist schnell, was in anderen vorgeht.' },
-  { id: 'i39', textDe: 'Ich kann mich gut in die Gedanken anderer hineinversetzen.' },
-  { id: 'i40', textDe: 'Wenn jemand traurig ist, fühle ich seinen Schmerz körperlich mit.' },
-  { id: 'i41', textDe: 'Die Gefühle anderer stecken mich stark an.' },
-  // Block G — Bindungsstil (ECR-RS constructs, public domain; harmonized to 5-point Likert)
-  { id: 'i42', textDe: 'Ich habe Angst, die Liebe einer nahestehenden Person zu verlieren.' },
-  { id: 'i43', textDe: 'Ich sorge mich, dass andere mich nicht so mögen, wie ich sie mag.' },
-  { id: 'i44', textDe: 'Ich rede nicht gern mit Partner:innen über meine tiefsten Gefühle.' },
-  { id: 'i45', textDe: 'Ich verlasse mich lieber auf mich selbst als auf andere.' },
-  { id: 'i46', textDe: 'Es fällt mir leicht, mich emotional auf andere einzulassen.' },
-  // Block H — Love Styles (own 6-factor model; deliberately NOT "5 Love Languages"®)
-  { id: 'i47', textDe: 'Ehrliche, liebevolle Worte bedeuten mir am meisten.' },
-  { id: 'i48', textDe: 'Ungeteilte gemeinsame Zeit ist für mich der Kern von Nähe.' },
-  { id: 'i49', textDe: 'Ich zeige Liebe, indem ich anderen praktisch den Rücken freihalte.' },
-  { id: 'i50', textDe: 'Körperliche Nähe ist für mich eine wichtige Sprache der Liebe.' },
-  { id: 'i51', textDe: 'Ich blühe auf, wenn wir zusammen wachsen und uns weiterentwickeln.' },
-  { id: 'i52', textDe: 'Durchdachte kleine Geschenke sagen mehr als große Worte.' },
-  // Block I — HSP, Rejection Sensitivity, emotionale Selbstwahrnehmung (own items)
-  { id: 'i53', textDe: 'Reize wie Lärm, Gerüche oder Hektik überfordern mich schneller als andere.' },
-  { id: 'i54', textDe: 'Ich nehme feine Stimmungen im Raum sofort wahr.' },
-  { id: 'i55', textDe: 'Bei Kritik oder Zurückweisung reagiere ich sehr empfindlich.' },
-  { id: 'i56', textDe: 'Ich erwarte oft, dass andere mich ablehnen könnten.' },
-  { id: 'i57', textDe: 'Es fällt mir schwer, meine eigenen Gefühle in Worte zu fassen.' },
+// ---------------------------------------------------------------------------
+// Block 1 — Dein Grundton: Extraversion & Verträglichkeit
+// ---------------------------------------------------------------------------
+const BLOCK_1: Spec[] = [
+  { id: 'e1', text: 'Ich gehe von mir aus auf fremde Menschen zu.', primary: 'e_gesellig' },
+  { id: 'e2', text: 'In größeren Runden bleibe ich lieber am Rand.', primary: '-e_gesellig' },
+  { id: 'e3', text: 'Wenn eine Gruppe keine Richtung hat, gebe ich sie vor.', primary: 'e_durchsetzung' },
+  { id: 'e4', text: 'Meine Meinung sage ich auch dann, wenn sie unbequem ist.', primary: 'e_durchsetzung' },
+  { id: 'e5', text: 'Mir fehlt selten der Schwung, etwas anzugehen.', primary: 'e_energie' },
+  { id: 'e6', text: 'Ich brauche lange, um in Gang zu kommen.', primary: '-e_energie' },
+  { id: 'a1', text: 'Es geht mir nahe, wenn es jemandem schlecht geht.', primary: 'a_mitgefuehl', also: [['emp_aff', 0.4, 1]] },
+  { id: 'a2', text: 'Die Sorgen anderer lassen mich ziemlich kalt.', primary: '-a_mitgefuehl', also: [['emp_aff', 0.4, -1]] },
+  { id: 'a3', text: 'Auch im Streit bleibe ich fair im Ton.', primary: 'a_respekt' },
+  { id: 'a4', text: 'Ich sage Leuten ungefiltert, was ich von ihnen halte.', primary: '-a_respekt' },
+  { id: 'a5', text: 'Ich gehe erst einmal davon aus, dass Menschen es ehrlich meinen.', primary: 'a_vertrauen' },
+  { id: 'a6', text: 'Bei neuen Bekanntschaften rechne ich damit, ausgenutzt zu werden.', primary: '-a_vertrauen' },
 ];
 
-const CHECKS: RawItem[] = [
-  { id: 'att01', textDe: 'Bitte wähle hier „trifft eher nicht zu“ aus.', isAttentionCheck: true, expectedValue: 2 },
-  { id: 'att02', textDe: 'Um zu zeigen, dass du aufmerksam liest, wähle „trifft voll zu“.', isAttentionCheck: true, expectedValue: 5 },
-  { id: 'att03', textDe: 'Ich lese diese Frage aufmerksam und wähle „teils/teils“.', isAttentionCheck: true, expectedValue: 3 },
-  { id: 'sd01', textDe: 'Ich habe noch nie in meinem Leben gelogen.', isSocialDesirability: true },
-  { id: 'sd02', textDe: 'Ich bin immer und ausnahmslos höflich, auch wenn man mich ärgert.', isSocialDesirability: true },
-  { id: 'sd03', textDe: 'Ich habe nie im Leben etwas genommen, das mir nicht gehört.', isSocialDesirability: true },
+// ---------------------------------------------------------------------------
+// Block 2 — Antrieb & Struktur: Gewissenhaftigkeit, emotionale Sensibilität, Offenheit
+// ---------------------------------------------------------------------------
+const BLOCK_2: Spec[] = [
+  { id: 'c1', text: 'Meine Sachen haben feste Plätze.', primary: 'c_ordnung' },
+  { id: 'c2', text: 'In meinem Alltag herrscht ziemliches Chaos.', primary: '-c_ordnung', also: [['adhs_unauf', 0.4, 1]] },
+  { id: 'c3', text: 'Angefangene Dinge bringe ich zu Ende.', primary: 'c_fleiss' },
+  { id: 'c4', text: 'Wenn etwas zäh wird, verliere ich die Lust.', primary: '-c_fleiss', also: [['adhs_unauf', 0.35, 1]] },
+  { id: 'c5', text: 'Auf meine Zusagen kann man sich verlassen.', primary: 'c_verantwortung' },
+  { id: 'c6', text: 'Termine und Fristen gehen bei mir manchmal unter.', primary: '-c_verantwortung', also: [['adhs_unauf', 0.5, 1]] },
+  { id: 'n1', text: 'Ich mache mir über vieles im Voraus Sorgen.', primary: 'n_angst' },
+  { id: 'n2', text: 'Auch in angespannten Lagen bleibe ich gelassen.', primary: '-n_angst', also: [['dark_bold', 0.3, 1]] },
+  { id: 'n3', text: 'Es gibt Phasen, in denen mich alles herunterzieht.', primary: 'n_nieder' },
+  { id: 'n4', text: 'Rückschläge stecke ich schnell weg.', primary: '-n_nieder' },
+  { id: 'n5', text: 'Meine Stimmung kann innerhalb weniger Stunden kippen.', primary: 'n_labil' },
+  { id: 'n6', text: 'Emotional bin ich ziemlich ausgeglichen.', primary: '-n_labil' },
+  { id: 'o1', text: 'Ich will verstehen, wie Dinge im Kern funktionieren.', primary: 'o_neugier' },
+  { id: 'o2', text: 'Abstrakte Gedankenspiele langweilen mich.', primary: '-o_neugier' },
+  { id: 'o3', text: 'Musik, Bilder oder Landschaften können mich tief berühren.', primary: 'o_aesthetik', also: [['hsp', 0.3, 1]] },
+  { id: 'o4', text: 'Für Kunst habe ich wenig übrig.', primary: '-o_aesthetik' },
+  { id: 'o5', text: 'In meinem Kopf laufen oft ganze Szenen ab.', primary: 'o_fantasie' },
+  { id: 'o6', text: 'Ich träume mich gern in andere Welten.', primary: 'o_fantasie' },
 ];
 
-// PHQ-9 / GAD-7 German (Löwe/Spitzer, Univ. Heidelberg translation; free of copyright
-// restriction per Pfizer). Original 4-point format 0–3, scored separately.
-const WELLBEING: RawItem[] = [
-  { id: 'phq01', textDe: 'Wenig Interesse oder Freude an deinen Tätigkeiten.' },
-  { id: 'phq02', textDe: 'Niedergeschlagenheit, Schwermut oder Hoffnungslosigkeit.' },
-  { id: 'phq03', textDe: 'Schwierigkeiten, ein- oder durchzuschlafen, oder vermehrter Schlaf.' },
-  { id: 'phq04', textDe: 'Müdigkeit oder Gefühl, keine Energie zu haben.' },
-  { id: 'phq05', textDe: 'Verminderter Appetit oder übermäßiges Bedürfnis zu essen.' },
-  { id: 'phq06', textDe: 'Schlechte Meinung von dir selbst; Gefühl, versagt oder die Familie enttäuscht zu haben.' },
-  { id: 'phq07', textDe: 'Schwierigkeiten, dich auf etwas zu konzentrieren, z. B. beim Lesen oder Fernsehen.' },
-  { id: 'phq08', textDe: 'Verlangsamte Bewegungen oder Sprache — oder das Gegenteil: Zappeligkeit und Ruhelosigkeit.' },
-  { id: 'phq09', textDe: 'Gedanken, dass du lieber tot wärst oder dir Leid zufügen möchtest.' },
-  { id: 'gad01', textDe: 'Nervosität, Ängstlichkeit oder Anspannung.' },
-  { id: 'gad02', textDe: 'Unfähigkeit, Sorgen zu stoppen oder zu kontrollieren.' },
-  { id: 'gad03', textDe: 'Übermäßige Sorgen bezüglich verschiedener Angelegenheiten.' },
-  { id: 'gad04', textDe: 'Schwierigkeiten zu entspannen.' },
-  { id: 'gad05', textDe: 'Rastlosigkeit, sodass Stillsitzen schwerfällt.' },
-  { id: 'gad06', textDe: 'Schnelle Verärgerung oder Gereiztheit.' },
-  { id: 'gad07', textDe: 'Gefühl der Angst, als würde etwas Schlimmes passieren.' },
+// ---------------------------------------------------------------------------
+// Block 3 — Fokus & Wahrnehmung: ADHS- und autistische Züge
+// ---------------------------------------------------------------------------
+const BLOCK_3: Spec[] = [
+  { id: 'ad1', text: 'Bei längeren Texten oder Gesprächen driftet mein Kopf ab.', primary: 'adhs_unauf' },
+  { id: 'ad2', text: 'Die letzten zehn Prozent einer Aufgabe bleiben oft liegen.', primary: 'adhs_unauf', also: [['c_fleiss', 0.4, -1]] },
+  { id: 'ad3', text: 'Ich verlege Dinge, die ich eben noch in der Hand hatte.', primary: 'adhs_unauf' },
+  { id: 'ad4', text: 'Aufgaben, die viel Konzentration verlangen, schiebe ich vor mir her.', primary: 'adhs_unauf' },
+  { id: 'ad5', text: 'Ich vergesse Rückmeldungen, die ich fest zugesagt hatte.', primary: 'adhs_unauf' },
+  { id: 'ad6', text: 'In einer Umgebung mit Geräuschen kann ich kaum arbeiten.', primary: 'adhs_unauf', also: [['hsp', 0.4, 1], ['au_sensorik', 0.3, 1]] },
+  { id: 'ad7', text: 'Langes Stillsitzen fällt mir körperlich schwer.', primary: 'adhs_hyper' },
+  { id: 'ad8', text: 'Ich rede los, bevor mein Gegenüber ausgesprochen hat.', primary: 'adhs_hyper', also: [['dark_disinh', 0.35, 1]] },
+  { id: 'ad9', text: 'Warten macht mich innerlich kribbelig.', primary: 'adhs_hyper' },
+  { id: 'ad10', text: 'Ich entscheide aus dem Bauch und bereue es manchmal.', primary: 'adhs_hyper', also: [['dark_disinh', 0.5, 1]] },
+  { id: 'ad11', text: 'Auch wenn ich äußerlich ruhig wirke, ist es in mir unruhig.', primary: 'adhs_hyper' },
+  { id: 'ad12', text: 'Ich fange Neues an, bevor das Alte fertig ist.', primary: 'adhs_hyper', also: [['c_fleiss', 0.3, -1]] },
+  { id: 'au1', text: 'Ironie und Andeutungen bemerke ich oft erst später.', primary: 'au_sozial', also: [['emp_cog', 0.4, -1]] },
+  { id: 'au2', text: 'Ungeschriebene Regeln in Gruppen erschließen sich mir schwer.', primary: 'au_sozial', also: [['emp_cog', 0.3, -1]] },
+  { id: 'au3', text: 'Small Talk ohne Inhalt strengt mich an.', primary: 'au_sozial', also: [['e_gesellig', 0.4, -1]] },
+  { id: 'au4', text: 'Mir fallen Kleinigkeiten auf, die andere übersehen.', primary: 'au_detail' },
+  { id: 'au5', text: 'Unstimmigkeiten in Zahlen oder Texten springen mir ins Auge.', primary: 'au_detail', also: [['c_ordnung', 0.3, 1]] },
+  { id: 'au6', text: 'Feste Abläufe geben mir Sicherheit.', primary: 'au_routine', also: [['c_ordnung', 0.3, 1]] },
+  { id: 'au7', text: 'Kurzfristige Planänderungen bringen mich aus dem Takt.', primary: 'au_routine', also: [['n_angst', 0.3, 1]] },
+  { id: 'au8', text: 'Ich habe Wege und Reihenfolgen, von denen ich ungern abweiche.', primary: 'au_routine' },
+  { id: 'au9', text: 'Bestimmte Geräusche kann ich einfach nicht ausblenden.', primary: 'au_sensorik', also: [['hsp', 0.5, 1]] },
+  { id: 'au10', text: 'Grelles Licht strengt mich stark an.', primary: 'au_sensorik', also: [['hsp', 0.4, 1]] },
+  { id: 'au11', text: 'Manche Stoffe oder Etiketten auf der Haut sind für mich kaum auszuhalten.', primary: 'au_sensorik', also: [['hsp', 0.4, 1]] },
+  { id: 'au12', text: 'In Themen, die mich packen, versinke ich stundenlang.', primary: 'au_interesse', also: [['o_neugier', 0.3, 1]] },
+  { id: 'au13', text: 'Über meine Lieblingsthemen weiß ich ungewöhnlich viel.', primary: 'au_interesse' },
+  { id: 'au14', text: 'Ich nehme Aussagen zunächst wörtlich.', primary: 'au_woertlich' },
+  { id: 'au15', text: 'Ich wünschte, Menschen würden einfach direkt sagen, was sie meinen.', primary: 'au_woertlich' },
+  { id: 'au16', text: 'Nach längerem Kontakt mit Menschen bin ich völlig leer.', primary: 'autism', also: [['e_gesellig', 0.6, -1], ['hsp', 0.5, 1]] },
 ];
 
-/**
- * Dramaturgy (Deliverable 8): warm-up first, sensitive items mid/late, never more
- * than 3 items of the same scale in a row (ADHS/Autism interleaved), attention
- * checks at ~33/66 %, SD items spread through block 3.
- */
-const ORDER: { block: number; ids: string[] }[] = [
-  { block: 1, ids: ['i01', 'i02', 'i03', 'i04', 'i05', 'i06', 'i07', 'i08', 'i09', 'i10'] },
-  {
-    block: 2,
-    ids: ['i11', 'i18', 'i12', 'i19', 'i13', 'i20', 'i14', 'att01', 'i21', 'i15', 'i22', 'i16', 'i23', 'i17', 'i24'],
-  },
-  {
-    block: 3,
-    ids: ['i25', 'i26', 'i38', 'i30', 'i27', 'sd01', 'i31', 'i39', 'i32', 'i28', 'i40', 'i33', 'sd02', 'i34', 'i41', 'i29', 'i35', 'att02', 'i36', 'sd03', 'i37'],
-  },
-  { block: 4, ids: ['i42', 'i47', 'i43', 'i48', 'i44', 'i49', 'i45', 'i50', 'att03', 'i46', 'i51', 'i52'] },
-  { block: 5, ids: ['i53', 'i54', 'i55', 'i56', 'i57'] },
-  {
-    block: 6,
-    ids: ['phq01', 'phq02', 'phq03', 'phq04', 'phq05', 'phq06', 'phq07', 'phq08', 'phq09', 'gad01', 'gad02', 'gad03', 'gad04', 'gad05', 'gad06', 'gad07'],
-  },
+// ---------------------------------------------------------------------------
+// Block 4 — Innenleben & Durchsetzung: Masking, Empathie, Dark Traits
+// ---------------------------------------------------------------------------
+const BLOCK_4: Spec[] = [
+  { id: 'mk1', text: 'In Gesellschaft spiele ich eine Rolle, statt ich selbst zu sein.', primary: 'masking', also: [['n_angst', 0.25, 1]] },
+  { id: 'mk2', text: 'Ich beobachte andere genau, um mir abzuschauen, wie man sich verhält.', primary: 'masking', also: [['autism', 0.35, 1]] },
+  { id: 'mk3', text: 'Ich zwinge mich zu Blickkontakt, obwohl er mir unangenehm ist.', primary: 'masking', also: [['autism', 0.4, 1]] },
+  { id: 'mk4', text: 'Ich lege mir Sätze für Gespräche im Voraus zurecht.', primary: 'masking', also: [['n_angst', 0.3, 1]] },
+  { id: 'mk5', text: 'Nach sozialen Situationen bin ich erschöpft vom Zusammenreißen.', primary: 'masking', also: [['autism', 0.35, 1]] },
+  { id: 'mk6', text: 'Die wenigsten Menschen kennen die Version von mir, die ich allein bin.', primary: 'masking' },
+  { id: 'ec1', text: 'Ich erkenne schnell, was jemand wirklich meint.', primary: 'emp_cog' },
+  { id: 'ec2', text: 'Ich kann mir gut vorstellen, wie eine Situation für andere aussieht.', primary: 'emp_cog' },
+  { id: 'ec3', text: 'Mir ist meist klar, wie meine Worte bei anderen ankommen.', primary: 'emp_cog' },
+  { id: 'ec4', text: 'Die Beweggründe anderer zu durchschauen fällt mir leicht.', primary: 'emp_cog' },
+  { id: 'ea1', text: 'Wenn jemand weint, steigt es in mir auch hoch.', primary: 'emp_aff' },
+  { id: 'ea2', text: 'Die Stimmung im Raum überträgt sich sofort auf mich.', primary: 'emp_aff', also: [['hsp', 0.5, 1]] },
+  { id: 'ea3', text: 'Bei traurigen Geschichten bin ich kaum zu halten.', primary: 'emp_aff' },
+  { id: 'ea4', text: 'Fremdes Leid kann mir den ganzen Tag verderben.', primary: 'emp_aff', also: [['hsp', 0.35, 1]] },
+  { id: 'db1', text: 'Situationen, die andere nervös machen, lassen mich kalt.', primary: 'dark_bold', also: [['n_angst', 0.35, -1]] },
+  { id: 'db2', text: 'Risiko reizt mich mehr, als es mir Angst macht.', primary: 'dark_bold' },
+  { id: 'db3', text: 'Vor fremden Gruppen zu sprechen macht mir nichts aus.', primary: 'dark_bold', also: [['e_durchsetzung', 0.4, 1]] },
+  { id: 'dm1', text: 'Ich setze meine Interessen durch, auch wenn andere dabei zu kurz kommen.', primary: 'dark_mean', also: [['a_mitgefuehl', 0.4, -1]] },
+  { id: 'dm2', text: 'Das Leid anderer berührt mich weniger als die meisten Menschen.', primary: 'dark_mean', also: [['emp_aff', 0.7, -1]] },
+  { id: 'dm3', text: 'Ich weiß, wie ich Menschen dorthin bringe, wo ich sie haben will.', primary: 'dark_mean', also: [['emp_cog', 0.3, 1]] },
+  { id: 'dd1', text: 'Regeln sehe ich eher als Vorschlag.', primary: 'dark_disinh', also: [['c_verantwortung', 0.3, -1]] },
+  { id: 'dd2', text: 'Ich handle im Moment, ohne an die Folgen zu denken.', primary: 'dark_disinh', also: [['adhs_hyper', 0.6, 1]] },
+  { id: 'dd3', text: 'Wenn ich etwas jetzt will, blende ich die Konsequenzen aus.', primary: 'dark_disinh' },
+  { id: 'dg1', text: 'Ich halte mich für fähiger als die meisten in meinem Umfeld.', primary: 'dark_grand', also: [['a_respekt', 0.3, -1]] },
+  { id: 'dg2', text: 'Besondere Menschen sollten auch besonders behandelt werden.', primary: 'dark_grand' },
+  { id: 'dg3', text: 'Es stört mich, wenn meine Leistung nicht gesehen wird.', primary: 'dark_grand' },
 ];
 
-const RAW_BY_ID = new Map<string, RawItem>(
-  [...CORE, ...CHECKS, ...WELLBEING].map((r) => [r.id, r]),
-);
+// ---------------------------------------------------------------------------
+// Block 5 — Nähe & Liebe: Bindungsstil und Love Styles
+// ---------------------------------------------------------------------------
+const BLOCK_5: Spec[] = [
+  { id: 'bx1', text: 'Ich habe Angst, wichtige Menschen zu verlieren.', primary: 'att_anx' },
+  { id: 'bx2', text: 'Ich sorge mich, weniger gemocht zu werden, als ich selbst mag.', primary: 'att_anx', also: [['rejection_sens', 0.5, 1]] },
+  { id: 'bx3', text: 'Wenn jemand länger nicht antwortet, denke ich sofort das Schlimmste.', primary: 'att_anx', also: [['rejection_sens', 0.5, 1]] },
+  { id: 'bx4', text: 'Ich brauche viel Bestätigung, dass zwischen uns alles in Ordnung ist.', primary: 'att_anx' },
+  { id: 'bv1', text: 'Über meine tiefsten Gefühle rede ich nicht gern.', primary: 'att_avoid', also: [['alexithymia', 0.3, 1]] },
+  { id: 'bv2', text: 'Ich verlasse mich lieber auf mich selbst als auf andere.', primary: 'att_avoid' },
+  { id: 'bv3', text: 'Wenn mir jemand zu nah kommt, brauche ich Abstand.', primary: 'att_avoid' },
+  { id: 'bv4', text: 'Hilfe anzunehmen fällt mir schwer.', primary: 'att_avoid' },
+  { id: 'bs1', text: 'Es fällt mir leicht, mich emotional einzulassen.', primary: 'att_secure', also: [['att_avoid', 0.5, -1]] },
+  { id: 'bs2', text: 'Ich kann mich auf nahe Menschen verlassen, ohne mich zu verlieren.', primary: 'att_secure' },
+  { id: 'bs3', text: 'Nähe und Eigenständigkeit gehen für mich gut zusammen.', primary: 'att_secure', also: [['att_anx', 0.35, -1]] },
+  { id: 'lk1', text: 'Ehrliche, liebevolle Worte bedeuten mir am meisten.', primary: 'love_klartext' },
+  { id: 'lk2', text: 'Ein aufrichtiges Kompliment trägt mich durch den Tag.', primary: 'love_klartext' },
+  { id: 'lm1', text: 'Ungeteilte gemeinsame Zeit ist für mich der Kern von Nähe.', primary: 'love_momente' },
+  { id: 'lm2', text: 'Lieber ein langer Abend zu zweit als ein großes Geschenk.', primary: 'love_momente', also: [['love_zeichen', 0.3, -1]] },
+  { id: 'la1', text: 'Ich zeige Zuneigung, indem ich anderen praktisch den Rücken freihalte.', primary: 'love_anpacken', also: [['a_mitgefuehl', 0.25, 1]] },
+  { id: 'la2', text: 'Wenn mir jemand ungefragt Arbeit abnimmt, fühle ich mich geliebt.', primary: 'love_anpacken' },
+  { id: 'ln1', text: 'Körperliche Nähe ist für mich eine wichtige Sprache.', primary: 'love_naehe' },
+  { id: 'ln2', text: 'Eine Umarmung sagt mir mehr als viele Sätze.', primary: 'love_naehe' },
+  { id: 'lw1', text: 'Ich blühe auf, wenn wir uns gemeinsam weiterentwickeln.', primary: 'love_wachstum', also: [['o_neugier', 0.25, 1]] },
+  { id: 'lw2', text: 'Beziehungen, in denen niemand mehr dazulernt, langweilen mich.', primary: 'love_wachstum' },
+  { id: 'lz1', text: 'Durchdachte kleine Geschenke berühren mich.', primary: 'love_zeichen' },
+  { id: 'lz2', text: 'Dass jemand sich ein Detail von mir gemerkt hat, bedeutet mir viel.', primary: 'love_zeichen' },
+];
 
-function build(): ItemDef[] {
-  const out: ItemDef[] = [];
-  let position = 1;
-  for (const { block, ids } of ORDER) {
-    for (const id of ids) {
-      const raw = RAW_BY_ID.get(id);
-      if (!raw) throw new Error(`unknown item in ORDER: ${id}`);
-      const isWellbeing = block === 6;
-      out.push({
-        id: raw.id,
-        position: position++,
-        textDe: raw.textDe,
-        block,
-        isAttentionCheck: raw.isAttentionCheck ?? false,
-        isSocialDesirability: raw.isSocialDesirability ?? false,
-        module: isWellbeing ? 'wellbeing' : 'core',
-        responseFormat: isWellbeing ? 'phq4' : 'likert5',
-        reverse: false, // Big-Five reversals are encoded as loading direction -1 (see loadings.ts)
-        expectedValue: raw.expectedValue,
-      });
+// ---------------------------------------------------------------------------
+// Block 6 — Feinfühligkeit: Hochsensibilität, Zurückweisung, Gefühlswahrnehmung
+// ---------------------------------------------------------------------------
+const BLOCK_6: Spec[] = [
+  { id: 'hs1', text: 'Lärm, Gedränge und Hektik überfordern mich schneller als andere.', primary: 'hsp', also: [['au_sensorik', 0.4, 1]] },
+  { id: 'hs2', text: 'Ich nehme feine Stimmungswechsel im Raum sofort wahr.', primary: 'hsp', also: [['emp_aff', 0.4, 1]] },
+  { id: 'hs3', text: 'Nach einem vollen Tag brauche ich zwingend Stille.', primary: 'hsp' },
+  { id: 'hs4', text: 'Ich erschrecke leicht.', primary: 'hsp', also: [['n_angst', 0.3, 1]] },
+  { id: 'rs1', text: 'Kritik trifft mich härter, als ich nach außen zeige.', primary: 'rejection_sens', also: [['n_angst', 0.3, 1]] },
+  { id: 'rs2', text: 'Ich rechne oft damit, dass andere mich ablehnen könnten.', primary: 'rejection_sens', also: [['att_anx', 0.4, 1]] },
+  { id: 'rs3', text: 'Ein knapper Tonfall beschäftigt mich stundenlang.', primary: 'rejection_sens' },
+  { id: 'rs4', text: 'Ich passe mein Verhalten an, um bloß nicht anzuecken.', primary: 'rejection_sens', also: [['masking', 0.5, 1]] },
+  { id: 'al1', text: 'Es fällt mir schwer, meine Gefühle in Worte zu fassen.', primary: 'alexithymia' },
+  { id: 'al2', text: 'Ich merke oft erst spät, dass mich etwas belastet hat.', primary: 'alexithymia' },
+  { id: 'al3', text: 'Wenn mich jemand fragt, wie es mir geht, weiß ich es selbst nicht genau.', primary: 'alexithymia' },
+  { id: 'al4', text: 'Körperliche Anspannung bemerke ich eher als das Gefühl dahinter.', primary: 'alexithymia' },
+];
+
+// ---------------------------------------------------------------------------
+// Validity items — attention checks and a short social-desirability scale.
+// ---------------------------------------------------------------------------
+const CHECKS: Record<string, Spec> = {
+  ac1: { id: 'ac1', text: 'Bitte wähle hier „trifft eher nicht zu“ aus.', primary: '', attentionCheck: 2 },
+  ac2: { id: 'ac2', text: 'Um zu zeigen, dass du aufmerksam liest, wähle „trifft voll zu“.', primary: '', attentionCheck: 5 },
+  ac3: { id: 'ac3', text: 'Diese Frage misst nichts — bitte wähle „teils/teils“.', primary: '', attentionCheck: 3 },
+  sd1: { id: 'sd1', text: 'Ich habe noch nie in meinem Leben gelogen.', primary: 'sd', socialDesirability: true },
+  sd2: { id: 'sd2', text: 'Ich bin immer und ausnahmslos höflich, auch wenn man mich ärgert.', primary: 'sd', socialDesirability: true },
+  sd3: { id: 'sd3', text: 'Ich habe nie im Leben etwas genommen, das mir nicht gehört.', primary: 'sd', socialDesirability: true },
+};
+
+// ---------------------------------------------------------------------------
+// Block 7 — optional wellbeing module.
+// PHQ-9 and GAD-7, German version (Löwe, Spitzer, Zipfel & Herzog; translation
+// Medizinische Universitätsklinik Heidelberg). The rights holder released these
+// for reproduction without permission or charge — the only verbatim instruments
+// in this repository. 4-point format (0–3), scored separately from the Likert core.
+// ---------------------------------------------------------------------------
+const WELLBEING: { id: string; text: string }[] = [
+  { id: 'phq1', text: 'Wenig Interesse oder Freude an deinen Tätigkeiten.' },
+  { id: 'phq2', text: 'Niedergeschlagenheit, Schwermut oder Hoffnungslosigkeit.' },
+  { id: 'phq3', text: 'Schwierigkeiten, ein- oder durchzuschlafen, oder vermehrter Schlaf.' },
+  { id: 'phq4', text: 'Müdigkeit oder das Gefühl, keine Energie zu haben.' },
+  { id: 'phq5', text: 'Verminderter Appetit oder übermäßiges Bedürfnis zu essen.' },
+  { id: 'phq6', text: 'Schlechte Meinung von dir selbst; das Gefühl, versagt oder Angehörige enttäuscht zu haben.' },
+  { id: 'phq7', text: 'Schwierigkeiten, dich auf etwas zu konzentrieren, etwa beim Lesen.' },
+  { id: 'phq8', text: 'Verlangsamte Bewegungen oder Sprache — oder das Gegenteil: Zappeligkeit und Ruhelosigkeit.' },
+  { id: 'phq9', text: 'Gedanken, dass du lieber tot wärst oder dir Leid zufügen möchtest.' },
+  { id: 'gad1', text: 'Nervosität, Ängstlichkeit oder Anspannung.' },
+  { id: 'gad2', text: 'Unfähigkeit, Sorgen zu stoppen oder zu kontrollieren.' },
+  { id: 'gad3', text: 'Übermäßige Sorgen bezüglich verschiedener Angelegenheiten.' },
+  { id: 'gad4', text: 'Schwierigkeiten zu entspannen.' },
+  { id: 'gad5', text: 'Rastlosigkeit, sodass Stillsitzen schwerfällt.' },
+  { id: 'gad6', text: 'Schnelle Verärgerung oder Gereiztheit.' },
+  { id: 'gad7', text: 'Gefühl der Angst, als würde etwas Schlimmes passieren.' },
+];
+
+// ---------------------------------------------------------------------------
+// Assembly: interleave so no more than three items of one scale run back to back,
+// drop the attention checks at roughly a third and two thirds, spread the
+// social-desirability items through the middle blocks.
+// ---------------------------------------------------------------------------
+
+/** Round-robin over scale groups so adjacent items rarely share a scale. */
+function interleave(specs: Spec[]): Spec[] {
+  const groups = new Map<string, Spec[]>();
+  for (const s of specs) {
+    const key = s.primary.replace(/^-/, '');
+    const bucket = groups.get(key) ?? [];
+    bucket.push(s);
+    groups.set(key, bucket);
+  }
+  const queues = [...groups.values()];
+  const out: Spec[] = [];
+  let guard = 0;
+  while (out.length < specs.length && guard++ < 10_000) {
+    for (const q of queues) {
+      const next = q.shift();
+      if (next) out.push(next);
     }
   }
   return out;
 }
 
-export const ITEMS: ItemDef[] = build();
+const BLOCKS: { block: number; specs: Spec[]; insert?: Record<number, string> }[] = [
+  { block: 1, specs: interleave(BLOCK_1) },
+  { block: 2, specs: interleave(BLOCK_2), insert: { 9: 'sd1' } },
+  { block: 3, specs: interleave(BLOCK_3), insert: { 12: 'ac1' } },
+  { block: 4, specs: interleave(BLOCK_4), insert: { 8: 'sd2', 20: 'ac2' } },
+  { block: 5, specs: interleave(BLOCK_5), insert: { 14: 'sd3' } },
+  { block: 6, specs: interleave(BLOCK_6), insert: { 6: 'ac3' } },
+];
+
+function build(): { items: ItemDef[]; loadings: Loading[] } {
+  const items: ItemDef[] = [];
+  const loadings: Loading[] = [];
+  let position = 1;
+
+  const emit = (spec: Spec, block: number) => {
+    const primaryId = spec.primary.replace(/^-/, '');
+    const primaryDir: 1 | -1 = spec.primary.startsWith('-') ? -1 : 1;
+
+    items.push({
+      id: spec.id,
+      position: position++,
+      textDe: spec.text,
+      block,
+      isAttentionCheck: spec.attentionCheck !== undefined,
+      isSocialDesirability: !!spec.socialDesirability,
+      module: 'core',
+      responseFormat: 'likert5',
+      reverse: false, // reversal is expressed as loading direction -1
+      expectedValue: spec.attentionCheck,
+    });
+
+    if (!primaryId) return; // attention checks measure nothing
+    loadings.push({ itemId: spec.id, scaleId: primaryId, weight: 1, direction: primaryDir });
+
+    // A facet item also feeds its parent domain at full weight.
+    const parent = SCALE_BY_ID.get(primaryId)?.parent;
+    if (parent) {
+      loadings.push({ itemId: spec.id, scaleId: parent, weight: 1, direction: primaryDir });
+    }
+
+    for (const [scaleId, weight, direction] of spec.also ?? []) {
+      loadings.push({ itemId: spec.id, scaleId, weight, direction });
+      const alsoParent = SCALE_BY_ID.get(scaleId)?.parent;
+      if (alsoParent) {
+        loadings.push({ itemId: spec.id, scaleId: alsoParent, weight, direction });
+      }
+    }
+  };
+
+  for (const { block, specs, insert } of BLOCKS) {
+    const withChecks: Spec[] = [];
+    specs.forEach((s, i) => {
+      const injected = insert?.[i];
+      if (injected) withChecks.push(CHECKS[injected]);
+      withChecks.push(s);
+    });
+    for (const spec of withChecks) emit(spec, block);
+  }
+
+  for (const w of WELLBEING) {
+    items.push({
+      id: w.id,
+      position: position++,
+      textDe: w.text,
+      block: 7,
+      isAttentionCheck: false,
+      isSocialDesirability: false,
+      module: 'wellbeing',
+      responseFormat: 'phq4',
+      reverse: false,
+    });
+  }
+
+  return { items, loadings };
+}
+
+const built = build();
+
+export const ITEMS: ItemDef[] = built.items;
+export const LOADINGS: Loading[] = built.loadings;
+
 export const CORE_ITEMS = ITEMS.filter((i) => i.module === 'core');
 export const WELLBEING_ITEMS = ITEMS.filter((i) => i.module === 'wellbeing');
 export const PHQ9_ITEM_IDS = WELLBEING_ITEMS.filter((i) => i.id.startsWith('phq')).map((i) => i.id);
 export const GAD7_ITEM_IDS = WELLBEING_ITEMS.filter((i) => i.id.startsWith('gad')).map((i) => i.id);
+
+/** Canonical order used by the URL payload codec — must stay stable per version. */
+export const PAYLOAD_ORDER_CORE = CORE_ITEMS.map((i) => i.id);
+export const PAYLOAD_ORDER_WELLBEING = WELLBEING_ITEMS.map((i) => i.id);
 
 export const LIKERT_OPTIONS = [
   { value: 1, label: 'trifft gar nicht zu' },

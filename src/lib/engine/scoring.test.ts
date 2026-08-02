@@ -16,9 +16,9 @@ import {
   toPercentile,
 } from './scoring';
 import type { ItemDef, Loading } from './types';
-import { ITEMS, PHQ9_ITEM_IDS, GAD7_ITEM_IDS, CORE_ITEMS } from '@/lib/seed/items';
-import { LOADINGS } from '@/lib/seed/loadings';
+import { ITEMS, LOADINGS, PHQ9_ITEM_IDS, GAD7_ITEM_IDS, CORE_ITEMS } from '@/lib/seed/items';
 import { ARCHETYPES } from '@/lib/seed/archetypes';
+import { SCALES } from '@/lib/seed/scales';
 
 const item = (id: string, over: Partial<ItemDef> = {}): ItemDef => ({
   id,
@@ -266,12 +266,40 @@ describe('seed integrity', () => {
     for (const l of LOADINGS) expect(ids.has(l.itemId)).toBe(true);
   });
 
-  it('57 substantive core items + 3 AC + 3 SD + 16 wellbeing', () => {
+  it('has a deep item pool: 3 attention checks, 3 SD items, 16 wellbeing items', () => {
     const core = ITEMS.filter((i) => i.module === 'core');
-    expect(core.filter((i) => !i.isAttentionCheck && !i.isSocialDesirability)).toHaveLength(57);
+    const substantive = core.filter((i) => !i.isAttentionCheck && !i.isSocialDesirability);
+    // Depth is the product promise — guard against silently shrinking the pool.
+    expect(substantive.length).toBeGreaterThanOrEqual(110);
     expect(core.filter((i) => i.isAttentionCheck)).toHaveLength(3);
     expect(core.filter((i) => i.isSocialDesirability)).toHaveLength(3);
     expect(ITEMS.filter((i) => i.module === 'wellbeing')).toHaveLength(16);
+  });
+
+  it('every facet scale is measured by at least two items', () => {
+    const perScale = new Map<string, number>();
+    for (const l of LOADINGS) {
+      if (l.weight === 1) perScale.set(l.scaleId, (perScale.get(l.scaleId) ?? 0) + 1);
+    }
+    for (const s of SCALES) {
+      if (s.dimensionGroup === 'wellbeing') continue;
+      expect(perScale.get(s.id) ?? 0, `scale ${s.id} needs >= 2 primary items`).toBeGreaterThanOrEqual(2);
+    }
+  });
+
+  it('never runs more than three items of one scale back to back', () => {
+    const primaryOf = new Map<string, string>();
+    for (const l of LOADINGS) {
+      if (l.weight === 1 && !primaryOf.has(l.itemId)) primaryOf.set(l.itemId, l.scaleId);
+    }
+    const core = ITEMS.filter((i) => i.module === 'core');
+    let run = 1;
+    for (let i = 1; i < core.length; i++) {
+      const prev = primaryOf.get(core[i - 1].id);
+      const cur = primaryOf.get(core[i].id);
+      run = prev && cur && prev === cur ? run + 1 : 1;
+      expect(run, `too many consecutive ${cur} items around position ${core[i].position}`).toBeLessThanOrEqual(3);
+    }
   });
 
   it('every substantive core item has at least one loading', () => {

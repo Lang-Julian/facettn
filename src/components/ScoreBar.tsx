@@ -1,41 +1,58 @@
-// Score bar with band chip and percentile context. Server-renderable.
+// A single score bar. Percentile context is only shown where real published norms
+// exist (currently the Big Five domains) — inventing a population comparison for a
+// scale that has none would be the exact kind of false precision this test avoids.
 
 const BAND_LABEL: Record<string, string> = {
-  gering: 'gering ausgeprägt',
-  moderat: 'moderat ausgeprägt',
-  deutlich: 'deutlich ausgeprägt',
-  stark: 'stark ausgeprägt',
+  gering: 'gering',
+  moderat: 'moderat',
+  deutlich: 'deutlich',
+  stark: 'stark',
 };
 
 export default function ScoreBar({
   label,
+  blurb,
   score,
   band,
   percentile,
+  showPercentile = false,
+  rawLabel,
+  emphasis = false,
 }: {
   label: string;
+  blurb?: string;
   score: number;
   band?: string;
   percentile?: number;
+  showPercentile?: boolean;
+  rawLabel?: string;
+  emphasis?: boolean;
 }) {
+  const value = Math.round(score);
+  const pct = percentile !== undefined ? Math.round(percentile) : undefined;
+
   return (
-    <div className="score-bar-row">
+    <div className={`score-bar-row${emphasis ? ' emphasis' : ''}`}>
       <div className="score-bar-label">
-        <span>{label}</span>
-        {band ? <span className="band-chip">{BAND_LABEL[band] ?? band}</span> : null}
+        <span className="score-bar-name">{label}</span>
+        <span className="score-bar-value">
+          {rawLabel ?? value}
+          {band ? <span className="band-chip">{BAND_LABEL[band] ?? band}</span> : null}
+        </span>
       </div>
       <div
         className="score-bar-track"
         role="img"
-        aria-label={`${label}: ${Math.round(score)} von 100${
-          percentile !== undefined ? `, höher als etwa ${Math.round(percentile)} % der Vergleichsgruppe` : ''
+        aria-label={`${label}: ${value} von 100${
+          showPercentile && pct !== undefined ? `, höher als etwa ${pct} % der Vergleichsgruppe` : ''
         }`}
       >
-        <div className="score-bar-fill" style={{ width: `${Math.round(score)}%` }} />
+        <div className="score-bar-fill" style={{ width: `${Math.max(1, value)}%` }} />
       </div>
-      {percentile !== undefined ? (
-        <p style={{ fontSize: '0.82rem', color: 'var(--ink-soft)', margin: '3px 0 0' }}>
-          Höher als etwa {Math.round(percentile)} % der Vergleichsgruppe
+      {blurb ? <p className="score-bar-blurb">{blurb}</p> : null}
+      {showPercentile && pct !== undefined ? (
+        <p className="score-bar-blurb">
+          Höher als etwa {pct} % der deutschen Vergleichsstichprobe.
         </p>
       ) : null}
     </div>

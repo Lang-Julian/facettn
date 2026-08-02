@@ -2,7 +2,7 @@
   "name": "facettn",
   "version": "0.1.0",
   "private": true,
-  "description": "Mobile-first multidimensional personality self-test (Edutainment, no diagnosis). Cross-loading scoring engine, DSGVO-first architecture.",
+  "description": "Multidimensional personality self-test that stores nothing: client-side scoring, result encoded in the URL fragment.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -10,15 +10,12 @@
     "typecheck": "tsc --noEmit",
     "lint": "next lint",
     "test": "vitest run",
-    "test:watch": "vitest",
-    "seed:supabase": "tsx scripts/seed.ts"
+    "test:watch": "vitest"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.47.0",
     "next": "^15.5.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "zod": "^3.25.0"
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
@@ -29,5 +26,6 @@
     "tsx": "^4.19.0",
     "typescript": "^5.6.0",
     "vitest": "^3.0.0"
-  }
+  },
+  "license": "MIT"
 }

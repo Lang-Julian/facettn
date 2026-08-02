@@ -1,92 +1,73 @@
 'use client';
 
-// Quiz flow: intro (consent a) -> core blocks 1-5 with facet-unlock interstitials ->
-// wellbeing opt-in -> optional block 6 -> server-side complete -> gate.
-// Engagement mechanics: segmented facet progress (collection effect), unlock
-// celebrations at block boundaries, question slide-in, autosave reassurance.
-// localStorage is the primary autosave (resume-safe); the server gets debounced
-// batches every SYNC_EVERY answers and a final flush before /complete.
+// The questionnaire. Everything here happens on the device: answers live in React
+// state and localStorage, the result is encoded into a URL fragment at the end.
+// There is no network call in this component — by design, not by omission.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ITEMS, LIKERT_OPTIONS, PHQ4_OPTIONS } from '@/lib/seed/items';
 import {
   BLOCK_META,
-  CONSENTS,
-  CONSENT_TEXT_VERSION,
   DISCLAIMER_PRE_TEST,
   MOTIVATORS,
+  PRIVACY_PROMISE,
   WELLBEING_INTRO,
 } from '@/lib/content/copy';
-import { track } from '@/lib/analytics';
+import { encodePayload } from '@/lib/share/payload';
 import LikertScale from './LikertScale';
 
-const STORAGE_KEY = 'facettn:quiz:v1';
-const SYNC_EVERY = 4;
-
-interface StoredAnswer {
-  value: number;
-  timeMs: number;
-  synced?: boolean;
-}
+const STORAGE_KEY = 'facettn:quiz:v2';
 
 interface QuizState {
-  sessionId: string | null;
-  answers: Record<string, StoredAnswer>;
+  answers: Record<string, number>;
   index: number;
   wellbeing: 'pending' | 'accepted' | 'skipped';
-  phase: 'intro' | 'questions' | 'motivator' | 'wellbeing-optin' | 'finishing';
+  phase: 'intro' | 'questions' | 'motivator' | 'wellbeing-optin';
 }
 
 const CORE_FLOW = ITEMS.filter((i) => i.module === 'core');
 const WELLBEING_FLOW = ITEMS.filter((i) => i.module === 'wellbeing');
-const CORE_BLOCKS = [1, 2, 3, 4, 5];
+const CORE_BLOCKS = [1, 2, 3, 4, 5, 6];
+const SECONDS_PER_ITEM = 7;
 
-function loadState(): QuizState | null {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as QuizState) : null;
-  } catch {
-    return null;
-  }
-}
-
-function saveState(s: QuizState) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
-  } catch {
-    /* storage full/blocked — server sync still works */
-  }
-}
+const initialState: QuizState = {
+  answers: {},
+  index: 0,
+  wellbeing: 'pending',
+  phase: 'intro',
+};
 
 export default function QuizShell() {
   const router = useRouter();
-  const [state, setState] = useState<QuizState>({
-    sessionId: null,
-    answers: {},
-    index: 0,
-    wellbeing: 'pending',
-    phase: 'intro',
-  });
+  const [state, setState] = useState<QuizState>(initialState);
   const [hydrated, setHydrated] = useState(false);
   const [resumed, setResumed] = useState(false);
-  const [consentA, setConsentA] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
   const questionShownAt = useRef<number>(Date.now());
-  const unsyncedCount = useRef(0);
 
   useEffect(() => {
-    const stored = loadState();
-    if (stored?.sessionId && stored.phase !== 'intro') {
-      setState({ ...stored, phase: stored.phase === 'finishing' ? 'questions' : stored.phase });
-      setResumed(true);
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const stored = JSON.parse(raw) as QuizState;
+        if (stored.phase !== 'intro' && Object.keys(stored.answers ?? {}).length > 0) {
+          setState(stored);
+          setResumed(true);
+        }
+      }
+    } catch {
+      /* corrupted or unavailable storage — start fresh */
     }
     setHydrated(true);
   }, []);
 
   useEffect(() => {
-    if (hydrated) saveState(state);
+    if (!hydrated) return;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch {
+      /* storage full or blocked — the quiz still works, just without resume */
+    }
   }, [state, hydrated]);
 
   const flow = useMemo(
@@ -95,10 +76,9 @@ export default function QuizShell() {
   );
   const currentItem = flow[state.index];
   const progress = Math.min(100, Math.round((state.index / flow.length) * 100));
-  const remainingMin = Math.max(1, Math.ceil(((flow.length - state.index) * 7) / 60));
+  const remainingMin = Math.max(1, Math.ceil(((flow.length - state.index) * SECONDS_PER_ITEM) / 60));
   const currentBlock = currentItem?.block ?? 6;
 
-  /** Per-block completion 0..1 for the segmented facet bar. */
   const blockProgress = useMemo(() => {
     const map = new Map<number, { total: number; done: number }>();
     flow.forEach((item, i) => {
@@ -110,158 +90,89 @@ export default function QuizShell() {
     return map;
   }, [flow, state.index]);
 
-  const syncBatch = useCallback(async (s: QuizState, force = false) => {
-    if (!s.sessionId) return;
-    const unsynced = Object.entries(s.answers).filter(([, a]) => !a.synced);
-    if (unsynced.length === 0) return;
-    if (!force && unsynced.length < SYNC_EVERY) return;
-    try {
-      const res = await fetch(`/api/session/${s.sessionId}/responses`, {
-        method: 'PATCH',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          responses: unsynced.map(([itemId, a]) => ({
-            itemId,
-            value: a.value,
-            responseTimeMs: a.timeMs,
-          })),
-        }),
-      });
-      if (res.ok) {
-        setState((prev) => {
-          const answers = { ...prev.answers };
-          for (const [id] of unsynced) {
-            if (answers[id]) answers[id] = { ...answers[id], synced: true };
-          }
-          return { ...prev, answers };
-        });
+  const finish = useCallback(
+    (answers: Record<string, number>) => {
+      const payload = encodePayload(answers);
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+      } catch {
+        /* ignore */
       }
-    } catch {
-      /* offline — retried on the next batch / final flush */
-    }
-  }, []);
-
-  async function start() {
-    setBusy(true);
-    setError(null);
-    try {
-      const res = await fetch('/api/session', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ consentA: true, textVersion: CONSENT_TEXT_VERSION }),
-      });
-      if (!res.ok) throw new Error(`status ${res.status}`);
-      const { sessionId } = (await res.json()) as { sessionId: string };
-      track('test_started');
-      questionShownAt.current = Date.now();
-      setState((prev) => ({ ...prev, sessionId, phase: 'questions', index: 0 }));
-    } catch {
-      setError('Der Test konnte nicht gestartet werden. Bitte versuche es gleich noch einmal.');
-    } finally {
-      setBusy(false);
-    }
-  }
+      router.push(`/ergebnis#${payload}`);
+    },
+    [router],
+  );
 
   function answer(value: number) {
     if (!currentItem) return;
-    const timeMs = Date.now() - questionShownAt.current;
-    const answers = {
-      ...state.answers,
-      [currentItem.id]: { value, timeMs, synced: false },
-    };
-    track('question_answered', { position: currentItem.position });
+    const answers = { ...state.answers, [currentItem.id]: value };
 
     const nextIndex = state.index + 1;
     const nextItem = flow[nextIndex];
-    const blockDone = nextItem && nextItem.block !== currentItem.block;
     const coreDone = nextIndex >= CORE_FLOW.length && state.wellbeing !== 'accepted';
     const allDone = nextIndex >= flow.length;
 
-    let next: QuizState;
-    if (allDone || coreDone) {
-      if (state.wellbeing === 'pending' && coreDone) {
-        next = { ...state, answers, index: nextIndex, phase: 'wellbeing-optin' };
-      } else {
-        next = { ...state, answers, index: nextIndex, phase: 'finishing' };
-      }
-    } else if (blockDone) {
-      track('block_completed', { block: currentItem.block });
-      next = { ...state, answers, index: nextIndex, phase: 'motivator' };
-    } else {
-      next = { ...state, answers, index: nextIndex, phase: 'questions' };
+    if (allDone || (coreDone && state.wellbeing === 'skipped')) {
+      finish(answers);
+      return;
     }
-    setState(next);
-    unsyncedCount.current += 1;
-    if (unsyncedCount.current >= SYNC_EVERY) {
-      unsyncedCount.current = 0;
-      void syncBatch(next);
+    if (coreDone && state.wellbeing === 'pending') {
+      setState({ ...state, answers, index: nextIndex, phase: 'wellbeing-optin' });
+      return;
     }
+    if (nextItem && nextItem.block !== currentItem.block) {
+      setState({ ...state, answers, index: nextIndex, phase: 'motivator' });
+      questionShownAt.current = Date.now();
+      return;
+    }
+    setState({ ...state, answers, index: nextIndex, phase: 'questions' });
     questionShownAt.current = Date.now();
   }
-
-  const finish = useCallback(async () => {
-    if (!state.sessionId || busy) return;
-    setBusy(true);
-    setError(null);
-    try {
-      await syncBatch(state, true);
-      const res = await fetch(`/api/session/${state.sessionId}/complete`, { method: 'POST' });
-      if (!res.ok) throw new Error(`status ${res.status}`);
-      const { token } = (await res.json()) as { token: string; crisis: boolean };
-      track('test_completed');
-      sessionStorage.setItem('facettn:lastSession', state.sessionId);
-      sessionStorage.setItem('facettn:lastToken', token);
-      localStorage.removeItem(STORAGE_KEY);
-      router.push(`/gate?t=${token}&s=${state.sessionId}`);
-    } catch {
-      setError('Speichern fehlgeschlagen — deine Antworten sind lokal gesichert. Bitte erneut versuchen.');
-      setBusy(false);
-    }
-  }, [state, busy, router, syncBatch]);
-
-  useEffect(() => {
-    if (state.phase === 'finishing') void finish();
-  }, [state.phase, finish]);
 
   if (!hydrated) return null;
 
   // ---------- Intro ----------
   if (state.phase === 'intro') {
+    const totalMin = Math.round((CORE_FLOW.length * SECONDS_PER_ITEM) / 60);
     return (
       <div className="quiz-enter">
         <div className="card">
-          <h1>Dein Test in 5 Facetten</h1>
+          <span className="kicker">Bevor es losgeht</span>
+          <h1 style={{ marginTop: 10 }}>{CORE_FLOW.length} Fragen, etwa {totalMin} Minuten</h1>
           <p>{DISCLAIMER_PRE_TEST}</p>
+          <p style={{ color: 'var(--ink-soft)' }}>
+            Der Test ist bewusst lang. Kurztests mit zwanzig Fragen können Facetten nicht
+            voneinander trennen — und genau dort liegt das Interessante.
+          </p>
           <div className="facet-preview">
             {CORE_BLOCKS.map((b) => (
               <span key={b} className="facet-chip">
-                <span className="idx" aria-hidden>{BLOCK_META[b].num}</span> {BLOCK_META[b].name}
+                <span className="idx">{BLOCK_META[b].num}</span> {BLOCK_META[b].name}
               </span>
             ))}
           </div>
           <p style={{ fontSize: '0.9rem', color: 'var(--ink-soft)' }}>
-            5 Facetten, ~8 Minuten. Dein Fortschritt wird automatisch gespeichert — du kannst
-            jederzeit pausieren und später weitermachen.
+            Dein Fortschritt wird lokal gesichert — du kannst jederzeit pausieren und später
+            weitermachen, auch nach einem Neustart des Browsers.
           </p>
-          <label className="consent-row">
-            <input
-              type="checkbox"
-              checked={consentA}
-              onChange={(e) => setConsentA(e.target.checked)}
-              aria-required="true"
-            />
-            <span>{CONSENTS.a}</span>
-          </label>
-          {error ? <p role="alert" style={{ color: 'var(--danger)' }}>{error}</p> : null}
-          <button className="btn" onClick={start} disabled={!consentA || busy}>
-            {busy ? 'Einen Moment …' : 'Los geht’s'}
+          <button className="btn" onClick={() => { questionShownAt.current = Date.now(); setState((p) => ({ ...p, phase: 'questions' })); }}>
+            Test starten
           </button>
+        </div>
+
+        <div className="card promise">
+          <h2 style={{ marginTop: 0, fontSize: '1.15rem' }}>{PRIVACY_PROMISE.headline}</h2>
+          <ul className="promise-list">
+            {PRIVACY_PROMISE.points.map((p) => (
+              <li key={p.slice(0, 24)}>{p}</li>
+            ))}
+          </ul>
         </div>
       </div>
     );
   }
 
-  // ---------- Facet unlocked (motivator) ----------
+  // ---------- Block completed ----------
   if (state.phase === 'motivator') {
     const lastBlock = flow[state.index - 1]?.block ?? 1;
     const meta = BLOCK_META[lastBlock];
@@ -270,10 +181,10 @@ export default function QuizShell() {
       <div className="motivator quiz-enter">
         <div className="facet-unlock" aria-hidden>✓</div>
         <p className="facet-unlock-label">
-          Facette {meta.num} von 05 gesichert
+          Abschnitt {meta.num} von 06
         </p>
         <h2>{meta.name}</h2>
-        <p style={{ color: 'var(--ink-soft)' }}>{MOTIVATORS[lastBlock] ?? 'Weiter geht’s!'}</p>
+        <p style={{ color: 'var(--ink-soft)' }}>{MOTIVATORS[lastBlock]}</p>
         <div className="facet-preview" style={{ justifyContent: 'center' }}>
           {CORE_BLOCKS.map((b) => (
             <span key={b} className={`facet-chip ${collected.includes(b) ? 'collected' : ''}`}>
@@ -282,7 +193,7 @@ export default function QuizShell() {
             </span>
           ))}
         </div>
-        <div style={{ maxWidth: 320, margin: '20px auto 0' }}>
+        <div style={{ maxWidth: 320, margin: '24px auto 0' }}>
           <button
             className="btn"
             autoFocus
@@ -291,19 +202,19 @@ export default function QuizShell() {
               setState((prev) => ({ ...prev, phase: 'questions' }));
             }}
           >
-            Nächste Facette →
+            Weiter
           </button>
         </div>
       </div>
     );
   }
 
-  // ---------- Wellbeing opt-in ----------
+  // ---------- Optional wellbeing module ----------
   if (state.phase === 'wellbeing-optin') {
     return (
       <div className="card quiz-enter">
-        <p className="facet-unlock-label">Alle fünf Facetten gesichert</p>
-        <h2 style={{ marginTop: 4 }}>Optional: Dein Wohlbefinden</h2>
+        <p className="facet-unlock-label">Hauptteil abgeschlossen</p>
+        <h2 style={{ marginTop: 4 }}>Optional: dein Wohlbefinden</h2>
         <p>{WELLBEING_INTRO}</p>
         <button
           className="btn"
@@ -312,50 +223,43 @@ export default function QuizShell() {
             setState((prev) => ({ ...prev, wellbeing: 'accepted', phase: 'questions' }));
           }}
         >
-          Fragen beantworten (16 Fragen, ~2 Min.)
+          Auch diese Fragen beantworten
         </button>
-        <button
-          className="link-quiet"
-          onClick={() => setState((prev) => ({ ...prev, wellbeing: 'skipped', phase: 'finishing' }))}
-        >
-          Überspringen und zum Ergebnis
-        </button>
+        <div style={{ textAlign: 'center' }}>
+          <button
+            className="link-quiet"
+            onClick={() => finish(state.answers)}
+          >
+            Überspringen und Ergebnis ansehen
+          </button>
+        </div>
       </div>
     );
   }
 
-  // ---------- Finishing ----------
-  if (state.phase === 'finishing' || !currentItem) {
-    return (
-      <div className="motivator quiz-enter">
-        <div className="facet-unlock pulse" aria-hidden>…</div>
-        <h2>Dein Profil wird berechnet</h2>
-        {error ? (
-          <>
-            <p role="alert" style={{ color: 'var(--danger)' }}>{error}</p>
-            <div style={{ maxWidth: 320, margin: '16px auto' }}>
-              <button className="btn" onClick={() => void finish()}>Erneut versuchen</button>
-            </div>
-          </>
-        ) : null}
-      </div>
-    );
-  }
+  if (!currentItem) return null;
 
   // ---------- Question ----------
   const options = currentItem.responseFormat === 'phq4' ? PHQ4_OPTIONS : LIKERT_OPTIONS;
   const isWellbeing = currentItem.module === 'wellbeing';
-  const blocks = state.wellbeing === 'accepted' ? [...CORE_BLOCKS, 6] : CORE_BLOCKS;
+  const blocks = state.wellbeing === 'accepted' ? [...CORE_BLOCKS, 7] : CORE_BLOCKS;
 
   return (
     <div>
       {resumed && state.index > 0 ? (
         <p className="resume-note" role="status">
-          Willkommen zurück — dein Fortschritt wurde wiederhergestellt. ✓
+          Willkommen zurück — dein Fortschritt wurde wiederhergestellt.
         </p>
       ) : null}
 
-      <div className="facet-track" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100} aria-label="Fortschritt">
+      <div
+        className="facet-track"
+        role="progressbar"
+        aria-valuenow={progress}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label="Fortschritt"
+      >
         {blocks.map((b) => {
           const bp = blockProgress.get(b);
           const pct = bp ? Math.round((bp.done / bp.total) * 100) : 0;
@@ -377,15 +281,15 @@ export default function QuizShell() {
 
       <div className="quiz-enter" key={currentItem.id}>
         {isWellbeing ? (
-          <p style={{ fontSize: '0.9rem', color: 'var(--ink-soft)', marginTop: 16 }}>
-            Wie oft warst du in den letzten zwei Wochen beeinträchtigt durch:
+          <p style={{ fontSize: '0.9rem', color: 'var(--ink-soft)', marginTop: 18 }}>
+            Wie oft hast du dich in den letzten zwei Wochen beeinträchtigt gefühlt durch:
           </p>
         ) : null}
         <p className="question-text">{currentItem.textDe}</p>
         <LikertScale
           name={currentItem.id}
           options={options}
-          value={state.answers[currentItem.id]?.value}
+          value={state.answers[currentItem.id]}
           onSelect={answer}
         />
       </div>
@@ -405,7 +309,7 @@ export default function QuizShell() {
           <span />
         )}
         <span className="autosave-hint" aria-hidden>
-          automatisch gespeichert
+          lokal gespeichert
         </span>
       </div>
     </div>

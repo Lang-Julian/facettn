@@ -1,123 +1,152 @@
 'use client';
 
-// Match/compare (Epic F2): both tokens required, server enforces mutual consent (d).
-// Output: total %, shared strengths, friction points with tips, overlay radar.
-// Honest framing: orientation, not prognosis.
+// Comparison without a server and without a consent database: both results arrive
+// as links, both are decoded locally, the match is computed in the browser. Consent
+// is not a checkbox here — it is the act of handing someone your link.
 
-import { useState } from 'react';
-import { track } from '@/lib/analytics';
+import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+import { buildProfile } from '@/lib/profile';
+import { decodePayload, extractPayload } from '@/lib/share/payload';
+import { buildMatchInsights, type MatchInsights } from '@/lib/match';
 import ResultRadar from './ResultRadar';
 
-interface MatchInsights {
-  total: number;
-  sharedStrengths: string[];
-  frictions: { point: string; tip: string }[];
-  overlay: { axis: string; a: number; b: number }[];
-}
-
-export default function CompareView({ ownToken }: { ownToken: string }) {
-  const [otherToken, setOtherToken] = useState('');
-  const [insights, setInsights] = useState<MatchInsights | null>(null);
+export default function CompareView() {
+  const [ownPayload, setOwnPayload] = useState<string | null>(null);
+  const [otherInput, setOtherInput] = useState('');
+  const [otherPayload, setOtherPayload] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
 
-  async function compare() {
-    setBusy(true);
-    setError(null);
+  useEffect(() => {
+    const hash = window.location.hash.replace(/^#/, '');
+    if (hash) setOwnPayload(hash);
+  }, []);
+
+  const insights: MatchInsights | null = useMemo(() => {
+    if (!ownPayload || !otherPayload) return null;
     try {
-      const cleaned = otherToken.trim().split('/').pop() ?? '';
-      const res = await fetch('/api/match', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ tokenA: ownToken, tokenB: cleaned }),
-      });
-      if (res.status === 403) {
-        setError(
-          'Beide Profile müssen dem Vergleich ausdrücklich zugestimmt haben (Einwilligung „Matching“). ' +
-            'Die Zustimmung kann beim Abschluss des Tests gegeben werden.',
-        );
-        return;
-      }
-      if (res.status === 404) {
-        setError('Dieses Profil wurde nicht gefunden. Prüfe den Link oder Code.');
-        return;
-      }
-      if (res.status === 410) {
-        setError('Eines der Profile ist abgelaufen (Links gelten 90 Tage).');
-        return;
-      }
-      if (!res.ok) throw new Error(`status ${res.status}`);
-      const data = (await res.json()) as MatchInsights;
-      setInsights(data);
-      track('match_completed');
-    } catch {
-      setError('Der Vergleich hat nicht geklappt. Bitte versuche es erneut.');
-    } finally {
-      setBusy(false);
+      const a = buildProfile(decodePayload(ownPayload).answers);
+      const b = buildProfile(decodePayload(otherPayload).answers);
+      return buildMatchInsights(a, b);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Der Vergleich hat nicht geklappt.');
+      return null;
     }
+  }, [ownPayload, otherPayload]);
+
+  function submit() {
+    setError(null);
+    const extracted = extractPayload(otherInput);
+    if (!extracted) {
+      setError('Das sieht nicht nach einem Facettn-Ergebnis-Link aus. Er enthält ein #-Zeichen, gefolgt von „v1.“ und einer langen Ziffernfolge.');
+      return;
+    }
+    if (extracted === ownPayload) {
+      setError('Das ist dein eigener Link — du brauchst den einer anderen Person.');
+      return;
+    }
+    setOtherPayload(extracted);
+  }
+
+  if (!ownPayload) {
+    return (
+      <div className="card">
+        <h1>Profile vergleichen</h1>
+        <p>
+          Für einen Vergleich brauchst du zuerst dein eigenes Ergebnis. Öffne deinen
+          Ergebnis-Link und wähle dort „Mit jemandem vergleichen“ — oder mach den Test.
+        </p>
+        <Link className="btn" href="/test">Test starten</Link>
+      </div>
+    );
+  }
+
+  if (!insights) {
+    return (
+      <div>
+        <h1>Profile vergleichen</h1>
+        <div className="card">
+          <p>
+            Füge den Ergebnis-Link der anderen Person ein. Beide Profile werden{' '}
+            <strong>in deinem Browser</strong> verglichen — die Daten gehen nirgendwohin.
+          </p>
+          <label htmlFor="other-link">Ergebnis-Link der anderen Person</label>
+          <input
+            id="other-link"
+            type="text"
+            value={otherInput}
+            onChange={(e) => setOtherInput(e.target.value)}
+            placeholder="https://…/ergebnis#v1.43125…"
+          />
+          {error ? <p role="alert" style={{ color: 'var(--danger)' }}>{error}</p> : null}
+          <button className="btn" style={{ marginTop: 12 }} disabled={!otherInput.trim()} onClick={submit}>
+            Vergleichen
+          </button>
+          <p className="inset-note" style={{ marginTop: 18 }}>
+            Eine Einwilligung musst du hier nicht anklicken: Wer seinen Link weitergibt,
+            entscheidet damit selbst. Ohne Link kein Vergleich.
+          </p>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div>
-      <h1>Profile vergleichen</h1>
-      {!insights ? (
+      <h1>Euer Vergleich</h1>
+
+      <div className="card" style={{ textAlign: 'center' }}>
+        <span className="kicker">Übereinstimmung</span>
+        <div className="match-total">{insights.total} %</div>
+        <p style={{ fontSize: '0.9rem', color: 'var(--ink-faint)', marginBottom: 0 }}>
+          Eine Orientierung, keine Prognose. Die Forschung zu Partnerpassung findet reale,
+          aber kleine Effekte — kein Algorithmus ersetzt echtes Kennenlernen.
+        </p>
+      </div>
+
+      <div className="card">
+        <h2 style={{ marginTop: 0 }}>Eure Profile übereinander</h2>
+        <ResultRadar
+          data={insights.overlay.map((o) => ({ axis: o.axis, value: o.a, compare: o.b }))}
+          compareLabel="Anderes Profil"
+        />
+      </div>
+
+      <div className="card">
+        <h2 style={{ marginTop: 0 }}>Woraus sich der Wert zusammensetzt</h2>
+        <ul className="tight-list">
+          {insights.breakdown.map((b) => (
+            <li key={b.label}>
+              <strong>{b.label}:</strong> {b.value} von 100 — {b.note}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {insights.sharedStrengths.length > 0 ? (
         <div className="card">
-          <p>
-            Füge den Ergebnis-Link (oder Code) der anderen Person ein. Der Vergleich funktioniert
-            nur, wenn <strong>beide</strong> beim Test dem Matching zugestimmt haben.
-          </p>
-          <label htmlFor="other-token" style={{ fontWeight: 600, fontSize: '0.95rem' }}>
-            Link oder Code des anderen Profils
-          </label>
-          <input
-            id="other-token"
-            type="text"
-            value={otherToken}
-            onChange={(e) => setOtherToken(e.target.value)}
-            placeholder="https://…/ergebnis/abc123…"
-          />
-          {error ? <p role="alert" style={{ color: 'var(--danger)' }}>{error}</p> : null}
-          <button className="btn" style={{ marginTop: 12 }} disabled={busy || !otherToken.trim()} onClick={compare}>
-            {busy ? 'Vergleiche …' : 'Vergleichen'}
-          </button>
+          <h2 style={{ marginTop: 0 }}>Gemeinsame Stärken</h2>
+          <ul className="pill-list">
+            {insights.sharedStrengths.map((s) => <li key={s}>{s}</li>)}
+          </ul>
         </div>
-      ) : (
-        <>
-          <div className="card" style={{ textAlign: 'center' }}>
-            <p style={{ margin: 0, color: 'var(--ink-soft)' }}>Euer Match</p>
-            <div className="match-total">{insights.total} %</div>
-            <p style={{ fontSize: '0.9rem', color: 'var(--ink-soft)' }}>
-              Eine unterhaltsame Orientierung, keine Prognose. Kein Algorithmus ersetzt echtes Kennenlernen.
-            </p>
-          </div>
-          <div className="card">
-            <h2 style={{ marginTop: 0 }}>Eure Profile übereinander</h2>
-            <ResultRadar
-              data={insights.overlay.map((o) => ({ axis: o.axis, value: o.a, compare: o.b }))}
-              compareLabel="Anderes Profil"
-            />
-          </div>
-          {insights.sharedStrengths.length > 0 ? (
-            <div className="card">
-              <h2 style={{ marginTop: 0 }}>Gemeinsame Stärken</h2>
-              <ul className="pill-list">
-                {insights.sharedStrengths.map((s) => <li key={s}>{s}</li>)}
-              </ul>
+      ) : null}
+
+      {insights.frictions.length > 0 ? (
+        <div className="card">
+          <h2 style={{ marginTop: 0 }}>Mögliche Reibungspunkte</h2>
+          {insights.frictions.map((f) => (
+            <div key={f.point.slice(0, 24)} style={{ marginBottom: 16 }}>
+              <p style={{ margin: '4px 0', fontWeight: 600 }}>{f.point}</p>
+              <p style={{ margin: 0, color: 'var(--ink-soft)' }}>{f.tip}</p>
             </div>
-          ) : null}
-          {insights.frictions.length > 0 ? (
-            <div className="card">
-              <h2 style={{ marginTop: 0 }}>Mögliche Reibungspunkte</h2>
-              {insights.frictions.map((f) => (
-                <div key={f.point.slice(0, 24)} style={{ marginBottom: 12 }}>
-                  <p style={{ margin: '4px 0', fontWeight: 600 }}>{f.point}</p>
-                  <p style={{ margin: 0, color: 'var(--ink-soft)' }}>💡 {f.tip}</p>
-                </div>
-              ))}
-            </div>
-          ) : null}
-        </>
-      )}
+          ))}
+        </div>
+      ) : null}
+
+      <div style={{ textAlign: 'center', marginTop: 24 }}>
+        <a className="link-quiet" href={`/ergebnis#${ownPayload}`}>← Zurück zu deinem Ergebnis</a>
+      </div>
     </div>
   );
 }
