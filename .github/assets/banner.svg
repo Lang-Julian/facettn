@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 320" width="1200" height="320" role="img" aria-label="Facettn — der Persönlichkeitstest, der nichts speichert">
+  <rect width="1200" height="320" fill="#fcfcfb"/>
+  <rect x="0" y="0" width="1200" height="3" fill="#1a1926"/>
+
+  <!-- Mark -->
+  <g transform="translate(96 96) scale(4.1)">
+    <g fill="none" stroke="#1a1926" stroke-linejoin="round">
+      <polygon points="16,3.6 23.3,5.9 27.8,12.1 27.8,19.9 23.3,26.1 16,28.4 8.7,26.1 4.2,19.9 4.2,12.1 8.7,5.9" stroke-width="0.7"/>
+      <g stroke-width="0.3" opacity="0.35">
+        <line x1="16" y1="16" x2="16" y2="3.6"/>
+        <line x1="16" y1="16" x2="27.8" y2="12.1"/>
+        <line x1="16" y1="16" x2="23.3" y2="26.1"/>
+        <line x1="16" y1="16" x2="8.7" y2="26.1"/>
+        <line x1="16" y1="16" x2="4.2" y2="12.1"/>
+      </g>
+    </g>
+    <polygon points="16,6.4 20.2,10.2 21.2,14.3 23.7,18.5 22.5,24.9 16,25.1 12.3,21.1 11.7,17.4 8.8,13.7 10.5,8.4"
+             fill="#4442c8" fill-opacity="0.13" stroke="#4442c8" stroke-width="0.8" stroke-linejoin="round"/>
+  </g>
+
+  <!-- Wordmark and claim -->
+  <text x="290" y="118" font-family="Georgia, 'Times New Roman', serif" font-size="76" font-weight="600" fill="#1a1926" letter-spacing="-1.5">Facettn</text>
+  <text x="292" y="164" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="23" fill="#5d5c6e">Multidimensionaler Persönlichkeitstest mit Facetten-Auflösung</text>
+
+  <line x1="292" y1="196" x2="1104" y2="196" stroke="#e9e8ef" stroke-width="1"/>
+
+  <!-- Facts row -->
+  <g font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
+    <text x="292" y="232" font-size="34" font-weight="700" fill="#1a1926" font-family="Georgia, serif">125</text>
+    <text x="292" y="256" font-size="14" fill="#9a99ab" letter-spacing="1.6">FRAGEN</text>
+
+    <text x="452" y="232" font-size="34" font-weight="700" fill="#1a1926" font-family="Georgia, serif">49</text>
+    <text x="452" y="256" font-size="14" fill="#9a99ab" letter-spacing="1.6">SKALEN</text>
+
+    <text x="592" y="232" font-size="34" font-weight="700" fill="#1a1926" font-family="Georgia, serif">MIT</text>
+    <text x="592" y="256" font-size="14" fill="#9a99ab" letter-spacing="1.6">LIZENZ</text>
+
+    <text x="752" y="232" font-size="34" font-weight="700" fill="#4442c8" font-family="Georgia, serif">0</text>
+    <text x="752" y="256" font-size="14" fill="#9a99ab" letter-spacing="1.6">GESPEICHERTE DATEN</text>
+  </g>
+
+  <text x="292" y="292" font-family="ui-monospace, 'SF Mono', Menlo, monospace" font-size="16" fill="#5d5c6e">
+    facettn.de/ergebnis<tspan fill="#4442c8" font-weight="600">#v1.4315224…</tspan><tspan fill="#9a99ab">  ← verlässt den Browser nie</tspan>
+  </text>
+</svg>

@@ -862,3 +862,134 @@ code {
   .stat-cell:nth-child(odd) { border-left: 1px solid var(--hairline); }
   .stat-cell:first-child { border-left: none; }
 }
+
+/* --- Report presentation ------------------------------------------------- */
+.report-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 20px;
+  padding: 8px 0 16px;
+  border-bottom: 2px solid var(--ink);
+  margin-bottom: 4px;
+}
+.report-meta {
+  font-size: 0.8rem;
+  color: var(--ink-faint);
+  margin: 4px 0 0;
+  font-variant-numeric: tabular-nums;
+}
+.report-meta-right { text-align: right; line-height: 1.5; }
+
+.sec-num {
+  display: inline-block;
+  min-width: 2.4em;
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--ink-faint);
+  vertical-align: 0.25em;
+}
+
+.report-toolbar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 20px 0 4px;
+}
+.toolbar-btn {
+  flex: 1 1 auto;
+  min-height: 44px;
+  padding: 10px 18px;
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink-soft);
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  font-weight: 550;
+  cursor: pointer;
+  transition: border-color 0.12s ease, color 0.12s ease;
+}
+.toolbar-btn:hover { border-color: var(--ink); color: var(--ink); }
+
+/* Numbers in a report should align in columns. */
+.score-bar-value, .match-total, .stat-cell .num, .num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Reference list ------------------------------------------------------ */
+.ref-list {
+  list-style: none;
+  counter-reset: ref;
+  padding: 0;
+  margin: 16px 0 0;
+}
+.ref-list li {
+  counter-increment: ref;
+  position: relative;
+  padding: 12px 0 12px 40px;
+  border-top: 1px solid var(--hairline);
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+.ref-list li::before {
+  content: '[' counter(ref) ']';
+  position: absolute;
+  left: 0;
+  top: 12px;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+.ref-cite { display: block; color: var(--ink); }
+.ref-cite a { word-break: break-word; }
+.ref-use {
+  display: block;
+  margin-top: 4px;
+  color: var(--ink-faint);
+  font-size: 0.82rem;
+}
+
+/* --- Print: turn the page into a clean report ---------------------------- */
+@media print {
+  @page { margin: 18mm 16mm; }
+
+  html, body {
+    background: #fff !important;
+    color: #000 !important;
+    font-size: 10.5pt;
+  }
+  .no-print,
+  .site-header,
+  .report-toolbar,
+  .promise,
+  .blur-teaser { display: none !important; }
+
+  main { max-width: none; padding: 0; }
+
+  .card, details.dim, .archetype-hero {
+    border: 1px solid #ccc !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .archetype-hero { padding: 24px !important; }
+
+  /* Expanded by the toolbar before printing; keep the marker out of the PDF. */
+  details.dim summary::after { display: none !important; }
+  details.dim summary { cursor: default; }
+
+  h1, h2, h3 { break-after: avoid; page-break-after: avoid; }
+  section { break-inside: auto; }
+  .pattern { break-inside: avoid; page-break-inside: avoid; }
+
+  a { color: #000 !important; text-decoration: underline; }
+  /* A printed report has to stand alone — surface the target of every link. */
+  .ref-cite a::after { content: ' (' attr(href) ')'; font-size: 0.85em; color: #444; }
+
+  .score-bar-fill { background: #000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .score-bar-track { background: #ddd !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+  .site-footer { border-top: 1px solid #ccc; font-size: 8.5pt; }
+}

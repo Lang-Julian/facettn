@@ -1,143 +1,186 @@
-# Facettn
+<p align="center">
+  <img src=".github/assets/banner.svg" alt="Facettn — multidimensionaler Persönlichkeitstest mit Facetten-Auflösung" width="880">
+</p>
 
-**A multidimensional personality self-test that stores nothing about you.**
+<p align="center">
+  <a href="https://github.com/Lang-Julian/facettn/actions/workflows/ci.yml"><img src="https://github.com/Lang-Julian/facettn/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <img src="https://img.shields.io/badge/license-MIT-1a1926" alt="MIT license">
+  <img src="https://img.shields.io/badge/gespeicherte%20Daten-0-4442c8" alt="Zero stored data">
+  <img src="https://img.shields.io/badge/Cookies-0-1a1926" alt="No cookies">
+  <img src="https://img.shields.io/badge/Tracker-0-1a1926" alt="No trackers">
+  <img src="https://img.shields.io/badge/Abhängigkeiten-3-5d5c6e" alt="Three runtime dependencies">
+</p>
 
-No account. No e-mail gate. No database. No cookies, no analytics, no tracking.
-Your answers are scored **in your browser** and your result lives in the URL
-fragment — the part after `#`, which browsers never send to a server.
+<h1 align="center">Der Persönlichkeitstest, der nichts von dir speichert</h1>
 
-German-language instrument · MIT licensed · [What this is not](#what-this-is-not)
+<p align="center">
+  Kein Konto. Keine E-Mail-Abfrage. Keine Datenbank. Keine Cookies, kein Tracking.<br>
+  Deine Antworten werden <b>in deinem Browser</b> ausgewertet — dein Ergebnis steckt im<br>
+  URL-Fragment, dem Teil hinter dem <code>#</code>, den Browser prinzipbedingt nie an einen Server senden.
+</p>
 
 ---
 
-## Why this exists
+## Warum das existiert
 
-Most online personality tests follow the same script: answer forty questions, get a
-teaser, hit a wall. *Enter your e-mail to unlock your full result.* The test was
-never the product. You were.
+Die meisten Persönlichkeitstests im Netz folgen demselben Drehbuch: vierzig Fragen
+beantworten, einen Teaser sehen, an die Wand stoßen. *E-Mail eintragen, um dein
+vollständiges Ergebnis freizuschalten.* Der Test war nie das Produkt. Du warst es.
 
-Facettn is the counter-example. The full evaluation appears immediately, at full
-depth. There is no e-mail field because there is no list. There is no delete
-function because there is no database. And because privacy promises are worth
-nothing if nobody can check them, the entire thing is open source — the questions,
-the weight of every single answer, the formulas, the wording.
+Facettn ist die Gegenprobe. Die vollständige Auswertung erscheint sofort und in voller
+Tiefe. Es gibt kein E-Mail-Feld, weil es keine Liste gibt. Es gibt keine Löschfunktion,
+weil es keine Datenbank gibt. Und weil Datenschutzversprechen nichts wert sind, wenn
+sie niemand nachprüfen kann, liegt alles offen: die Fragen, das Gewicht jeder einzelnen
+Antwort, die Formeln, die Texte.
 
-## How the no-storage part actually works
+<table>
+  <tr>
+    <td width="50%"><img src=".github/assets/screen-landing.jpg" alt="Startseite"></td>
+    <td width="50%"><img src=".github/assets/screen-report.jpg" alt="Auswertung mit nummerierten Abschnitten"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Startseite</sub></td>
+    <td align="center"><sub>Auswertung — nummerierte Abschnitte, PDF-Export</sub></td>
+  </tr>
+</table>
 
-The trick is unspectacular and thirty years old: the **URL fragment**.
+## Wie „nichts gespeichert" technisch funktioniert
+
+Der entscheidende Mechanismus ist unspektakulär und über dreißig Jahre alt: das
+**URL-Fragment**.
 
 ```
 facettn.de/ergebnis#v1.4315224…
-                    └─ never leaves the browser
+                    └─ verlässt den Browser nie
 ```
 
-Browsers treat everything after `#` differently from the rest of a URL. It is not
-in the HTTP request line, not in `Referer` headers, not in any server log. It
-exists only on the devices that hold the link.
+Browser behandeln alles hinter dem `#` grundsätzlich anders als den Rest einer
+Adresse. Es steht nicht in der HTTP-Anfrage, nicht im `Referer`-Header, in keinem
+Server-Logfile. Es existiert ausschließlich auf den Geräten, die den Link haben.
 
-The payload is deliberately boring: one digit per answer, in canonical item order,
-prefixed with a format version. Not encrypted, not obfuscated — you can decode your
-own link by hand. A system whose data handling can be verified by reading a URL does
-not need to be believed.
+Der Payload ist bewusst langweilig: eine Ziffer pro Antwort, in fester Reihenfolge,
+mit Versions-Präfix. Nicht verschlüsselt, nicht verschleiert — du kannst deinen
+eigenen Link von Hand dekodieren. Ein System, dessen Datenhaltung man durch Lesen
+einer URL überprüfen kann, muss man nicht glauben.
 
-On page load the browser decodes those digits, runs the scoring engine locally and
-renders the report. You can switch off your network after loading and it still works.
+```mermaid
+flowchart LR
+    A[Fragen<br/>beantworten] -->|localStorage| B[Antworten<br/>im Browser]
+    B --> C[Scoring-Engine<br/>läuft lokal]
+    C --> D["/ergebnis#v1.4315…"]
+    D --> E[Auswertung<br/>gerendert]
+    D -.->|Fragment wird nie<br/>übertragen| S[(Server)]
+    S -.->|liefert nur<br/>statische Dateien| E
+```
 
-Two consequences worth knowing:
+Zwei Konsequenzen, die man kennen sollte:
 
-- **The link is the result.** Bookmark it to come back. Lose it and the result is
-  gone — for everyone, because it never existed anywhere else.
-- **Sharing means sharing.** Anyone with the link sees the profile. The optional
-  wellbeing module (PHQ-9/GAD-7) is stripped from share links automatically; it
-  contains the item about self-harm and has no business travelling in a shared URL.
+- **Der Link ist das Ergebnis.** Als Lesezeichen speichern, um zurückzukommen. Geht er
+  verloren, ist das Ergebnis weg — auch für uns, weil es nie woanders existiert hat.
+- **Teilen heißt wirklich teilen.** Wer den Link hat, sieht das Profil. Das optionale
+  Wohlbefindens-Modul wird aus Teilen-Links automatisch entfernt; dort steht die Frage
+  nach Suizidgedanken, und die hat in einem weitergegebenen Link nichts zu suchen.
 
-## The instrument
+<p align="center">
+  <img src=".github/assets/screen-transparency.jpg" alt="Transparenz-Seite" width="720">
+</p>
+
+## Das Instrument
 
 | | |
 |---|---|
-| Items | 119 core + 3 attention checks + 3 social-desirability + 16 optional wellbeing |
-| Duration | ~15 minutes |
-| Scales | 5 Big Five domains with 3 facets each, ADHD (2 facets), autistic traits (6 facets), masking, 4 dark-trait scales, cognitive/affective empathy, 3 attachment scales, 6 love styles, 3 sensitivity scales |
-| Output | Archetype, 10-axis radar, facet-level bars, detected cross-dimension patterns, myths vs. facts, practical suggestions |
+| **Fragen** | 119 inhaltliche + 3 Aufmerksamkeitskontrollen + 3 Soziale-Erwünschtheit + 16 optionale Wohlbefindens-Fragen |
+| **Dauer** | ~15 Minuten |
+| **Skalen** | 5 Big-Five-Domänen mit je 3 Facetten · ADHS (2 Facetten) · autistische Züge (6 Facetten) · Masking · 4 Dark-Trait-Skalen · kognitive/affektive Empathie · 3 Bindungsskalen · 6 Love Styles · 3 Sensibilitätsskalen |
+| **Ausgabe** | Archetyp · 10-Achsen-Radar · Facetten-Balken · erkannte Wechselwirkungen · Mythen vs. Fakten · Alltagstipps · Quellenverzeichnis mit DOIs · PDF-Export |
 
-Items deliberately **cross-load** onto several scales. That is not a shortcut to
-fewer questions — it reflects that traits genuinely overlap. Someone who acts on
-impulse may be doing so from ADHD-typical impulse control or from a considered
-disregard for rules; the surrounding items decide which reading holds.
+Fragen laden bewusst auf **mehrere Skalen gleichzeitig**. Das ist keine Abkürzung zu
+weniger Fragen, sondern bildet ab, dass Merkmale sich real überlappen: Wer impulsiv
+handelt, kann das aus ADHS-typischer Impulskontrolle tun oder aus bewusster
+Geringschätzung von Regeln. Die umgebenden Fragen entscheiden, welche Lesart trägt.
 
-The test is long on purpose. With twenty questions you cannot tell whether someone
-is disorganised *and* unreliable or disorganised *but* rock-solid — and that
-distinction is the interesting part. Hence facets under every domain.
+Der Test ist mit Absicht lang. Mit zwanzig Fragen lässt sich nicht unterscheiden, ob
+jemand unordentlich **und** unzuverlässig ist oder unordentlich **aber** grundsolide —
+und genau das ist der interessante Teil. Daher Facetten unter jeder Domäne.
 
-### What this is not
+### Was dieser Test nicht ist
 
-Not a diagnostic or screening instrument. It describes personality tendencies —
-"Züge", not conditions. Nothing here detects, screens for or diagnoses anything, and
-the wording is kept that way deliberately (see the note in `src/lib/content/copy.ts`).
-For real clarity under real distress you need people, not a website.
+Kein Diagnose- oder Screening-Instrument. Er beschreibt Ausprägungen von
+Persönlichkeit — „Züge", keine Krankheiten. Nichts hier erkennt, screent oder
+diagnostiziert etwas, und die Sprache ist bewusst so gehalten (siehe die Notiz in
+`src/lib/content/copy.ts`). Für echte Klarheit bei echtem Leidensdruck braucht es
+Menschen, keine Website.
 
-## Licensing of the items
+## Lizenzstatus der Fragen
 
-Every core item is an **original German formulation** written for this project.
-They are informed by published *constructs* — the Big Five facet structure
-(IPIP/BFI-2), the DSM-5 attention and hyperactivity domains, camouflaging research,
-the triarchic psychopathy model, ECR attachment dimensions, sensory-processing
-sensitivity — but reproduce no wording from any copyrighted scale. That keeps the
-repository MIT-clean.
+Jede inhaltliche Frage ist eine **eigenständige deutsche Formulierung**, für dieses
+Projekt geschrieben. Sie orientieren sich an publizierten *Konstrukten* — der
+Big-Five-Facettenstruktur (IPIP/BFI-2), den DSM-5-Domänen für Aufmerksamkeit und
+Hyperaktivität, der Camouflaging-Forschung, dem triarchischen Psychopathie-Modell, den
+ECR-Bindungsdimensionen, der Sensory-Processing-Sensitivity — übernehmen aber keinen
+Wortlaut aus geschützten Skalen. Das hält das Repository MIT-sauber.
 
-The only verbatim instruments are **PHQ-9 and GAD-7** (German version; Löwe,
-Spitzer, Zipfel & Herzog, translation Universitätsklinik Heidelberg), which the
-rights holder released for free reproduction.
+Die einzigen wörtlich verwendeten Instrumente sind **PHQ-9 und GAD-7** (deutsche
+Fassung; Löwe, Spitzer, Zipfel & Herzog, Übersetzung Universitätsklinik Heidelberg),
+die der Rechteinhaber ausdrücklich zur freien Vervielfältigung freigegeben hat.
 
-This project is not affiliated with the authors of any referenced original instrument.
+Dieses Projekt ist nicht mit den Autorinnen und Autoren der referenzierten
+Original-Instrumente assoziiert. Das vollständige Quellenverzeichnis mit DOIs liegt in
+[`src/lib/content/references.ts`](src/lib/content/references.ts) und wird in jeder
+Auswertung mit ausgegeben.
 
-## Architecture
+## Architektur
 
 ```
-src/lib/engine/      Pure scoring: reverse coding, cross-loading normalization,
-                     Φ-percentiles, bands, validity flags, archetype resolution,
-                     match formula. No I/O, fully unit-tested.
-src/lib/seed/        Items + loading matrix (co-located), scales with facets,
-                     archetypes, published norms.
-src/lib/share/       The URL payload codec.
-src/lib/content/     Dimension copy, cross-dimension pattern rules, legal wording.
-src/lib/profile.ts   Answers → full profile. Runs client-side.
-src/app/             Landing, /test, /ergebnis, /vergleich, /transparenz,
-                     /archetyp/[slug] (static), legal pages.
+src/lib/engine/      Reines Scoring: Reverse-Kodierung, Cross-Loading-Normierung,
+                     Φ-Perzentile, Bänder, Validitäts-Flags, Archetyp-Auflösung,
+                     Match-Formel. Kein I/O, vollständig unit-getestet.
+src/lib/seed/        Items + Loading-Matrix (zusammen), Skalen mit Facetten,
+                     Archetypen, publizierte Normwerte.
+src/lib/share/       Der URL-Payload-Codec.
+src/lib/content/     Dimensionstexte, Muster-Regeln, Quellen, Rechtstexte.
+src/lib/profile.ts   Antworten → vollständiges Profil. Läuft im Browser.
+src/app/             Startseite, /test, /ergebnis, /vergleich, /transparenz,
+                     /archetyp/[slug] (statisch), Rechtsseiten.
 ```
 
-There is no `api/` directory, no database client and no ORM. That absence is the
-feature.
+Es gibt kein `api/`-Verzeichnis, keinen Datenbank-Client und kein ORM. Diese Abwesenheit
+ist das Feature. Laufzeit-Abhängigkeiten: `next`, `react`, `react-dom`.
 
-## Development
+## Entwicklung
 
 ```bash
 npm ci
 npm run dev        # http://localhost:3000
-npm test           # 48 unit tests
+npm test           # 48 Unit-Tests
 npm run typecheck && npm run lint && npm run build
 ```
 
-Everything is statically renderable — no server-side state, no environment
-variables required to run or deploy. Host it anywhere that serves files.
+Alle Seiten sind statisch vorgerendert — kein serverseitiger Zustand, keine
+Umgebungsvariablen zum Betrieb oder Deployment. Hostbar überall, wo Dateien
+ausgeliefert werden. Die CI läuft `typecheck → lint → test → build` ohne ein einziges
+Secret; genau das ist der Beweis, dass hier nichts zu konfigurieren ist.
 
-## Contributing
+## Mitmachen
 
-Found a badly worded item, a questionable weight, or a flaw in the scoring? That is
-a welcome contribution, not a nuisance. See [CONTRIBUTING.md](CONTRIBUTING.md).
+Eine schlecht formulierte Frage, ein Gewicht, das der Prüfung nicht standhält, ein
+Denkfehler in der Auswertung — das ist ein willkommener Beitrag, kein Ärgernis. Siehe
+[CONTRIBUTING.md](CONTRIBUTING.md) für die nicht verhandelbaren Grundregeln.
 
-## Status and honest caveats
+## Status und offene Punkte
 
-- The self-written items are **not yet psychometrically validated**. A pilot study
-  (N ≥ 300) is needed before any claim about reliability or factor structure.
-- Percentiles exist only for the Big Five domains (German BFI-2 reference sample,
-  Danner et al. 2019, N = 770). Other scales report raw values without population
-  comparison rather than inventing one.
-- Cross-loading weights are theory-driven starting values awaiting empirical
-  calibration.
-- The Impressum and privacy pages contain `[TODO]` placeholders. German law requires
-  a real Impressum before a public deployment.
+Ehrlichkeit über den Reifegrad gehört zur Vertrauenswürdigkeit:
 
-## License
+- Die selbst formulierten Fragen sind **psychometrisch noch nicht validiert**. Vor
+  Aussagen über Reliabilität oder Faktorstruktur braucht es eine Pilotstudie (N ≥ 300).
+- Perzentile existieren nur für die Big-Five-Domänen (deutsche BFI-2-Referenzstichprobe,
+  Danner et al. 2019, N = 770). Andere Skalen weisen Rohwerte ohne
+  Bevölkerungsvergleich aus, statt einen zu erfinden.
+- Die Cross-Loading-Gewichte sind theoriegeleitete Startwerte und warten auf
+  empirische Kalibrierung.
+- Impressum und Datenschutzerklärung enthalten `[TODO]`-Platzhalter. Vor einer
+  öffentlichen Veröffentlichung ist ein vollständiges Impressum nach § 5 DDG Pflicht.
 
-MIT — see [LICENSE](LICENSE).
+## Lizenz
+
+MIT — siehe [LICENSE](LICENSE).

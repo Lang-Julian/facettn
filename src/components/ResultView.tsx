@@ -9,11 +9,18 @@ import { buildProfile, type Profile } from '@/lib/profile';
 import { decodePayload, stripWellbeing } from '@/lib/share/payload';
 import { DISCLAIMER_RESULT, PRIVACY_PROMISE, VALIDITY_NOTES } from '@/lib/content/copy';
 import { DIMENSIONS, OVERLAPS, RADAR_SCALES, radarValues } from '@/lib/content/dimensions';
-import { SCALE_BY_ID } from '@/lib/seed/scales';
+import { SCALE_BY_ID, SCALES } from '@/lib/seed/scales';
+import { PAYLOAD_ORDER_CORE } from '@/lib/seed/items';
+import { REFERENCES } from '@/lib/content/references';
 import CrisisBanner from './CrisisBanner';
+import ReportToolbar from './ReportToolbar';
 import ResultRadar from './ResultRadar';
 import ScoreBar from './ScoreBar';
 import ShareSheet from './ShareSheet';
+
+const reportedScaleCount = SCALES.filter(
+  (s) => s.dimensionGroup !== 'validity' && s.dimensionGroup !== 'wellbeing',
+).length;
 
 const BAND_COPY: Record<string, string> = {
   gering: 'gering ausgeprägt',
@@ -93,6 +100,19 @@ export default function ResultView() {
     <>
       {profile.crisis ? <CrisisBanner /> : null}
 
+      <header className="report-head">
+        <div>
+          <span className="kicker">Persönlichkeitsprofil</span>
+          <p className="report-meta">
+            {PAYLOAD_ORDER_CORE.length} beantwortete Fragen · {reportedScaleCount} ausgewertete Skalen
+            {wellbeing ? ' · inkl. Wohlbefindens-Modul' : ''}
+          </p>
+        </div>
+        <p className="report-meta report-meta-right">
+          Kein Datensatz angelegt.<br />Berechnet in deinem Browser.
+        </p>
+      </header>
+
       <section className="archetype-hero">
         <span className="kicker">Dein Archetyp</span>
         <h1>{archetype.nameDe}</h1>
@@ -102,7 +122,7 @@ export default function ResultView() {
       </section>
 
       <div className="card">
-        <h2 style={{ marginTop: 0 }}>Kurz gesagt</h2>
+        <h2 style={{ marginTop: 0 }}><span className="sec-num">01</span>Kurz gesagt</h2>
         <p>
           Am stärksten ausgeprägt ist bei dir <strong>{ranked[0].label}</strong>, am schwächsten{' '}
           <strong>{ranked[ranked.length - 1].label}</strong>.{' '}
@@ -135,8 +155,10 @@ export default function ResultView() {
         </div>
       ) : null}
 
+      <ReportToolbar />
+
       <div className="card">
-        <h2 style={{ marginTop: 0 }}>Dein Gesamtprofil</h2>
+        <h2 style={{ marginTop: 0 }}><span className="sec-num">02</span>Gesamtprofil</h2>
         <ResultRadar data={radarData} />
         <p style={{ fontSize: '0.85rem', color: 'var(--ink-faint)', marginTop: 4 }}>
           Werte von 0 bis 100 je Dimension. Kein Wert ist „gut“ oder „schlecht“ — das Muster zählt.
@@ -145,7 +167,7 @@ export default function ResultView() {
 
       {patterns.length > 0 ? (
         <section>
-          <h2>Was in deinem Profil zusammenspielt</h2>
+          <h2><span className="sec-num">03</span>Was in deinem Profil zusammenspielt</h2>
           <p style={{ color: 'var(--ink-soft)', marginTop: 0 }}>
             Diese Beobachtungen entstehen aus Kombinationen mehrerer Skalen — sie sind der Teil,
             den eine reine Werteliste nicht zeigen kann.
@@ -164,7 +186,7 @@ export default function ResultView() {
       ) : null}
 
       <section>
-        <h2>Alle Dimensionen im Detail</h2>
+        <h2><span className="sec-num">04</span>Alle Dimensionen im Detail</h2>
         <p style={{ color: 'var(--ink-soft)', marginTop: 0 }}>
           Unter jeder Dimension stehen ihre Facetten. Dort wird sichtbar, was ein Gesamtwert
           verschluckt — zwei Menschen mit derselben Zahl können völlig verschieden aussehen.
@@ -271,7 +293,7 @@ export default function ResultView() {
 
       {wellbeing ? (
         <div className="card">
-          <h2 style={{ marginTop: 0 }}>Dein Wohlbefinden</h2>
+          <h2 style={{ marginTop: 0 }}><span className="sec-num">05</span>Wohlbefinden</h2>
           <p style={{ color: 'var(--ink-soft)', marginTop: 0 }}>
             Diese beiden Werte beschreiben die letzten zwei Wochen — eine Momentaufnahme, keine
             Eigenschaft. Sie sind bewusst <strong>nicht</strong> Teil deines Teilen-Links.
@@ -287,7 +309,7 @@ export default function ResultView() {
       ) : null}
 
       <section>
-        <h2>Warum sich Dimensionen überlappen</h2>
+        <h2><span className="sec-num">06</span>Warum sich Dimensionen überlappen</h2>
         {OVERLAPS.map((o) => (
           <div className="card" key={o.title}>
             <h3 style={{ marginTop: 0, textTransform: 'none', letterSpacing: 0, fontSize: '1.05rem', color: 'var(--ink)' }}>
@@ -296,6 +318,38 @@ export default function ResultView() {
             <p style={{ marginBottom: 0 }}>{o.text}</p>
           </div>
         ))}
+      </section>
+
+      <section>
+        <h2><span className="sec-num">07</span>Methode und Quellen</h2>
+        <div className="card">
+          <p style={{ marginTop: 0 }}>
+            Jede Frage zählt mit einem festgelegten Gewicht auf eine oder mehrere Skalen. Die
+            Rohwerte werden auf eine Skala von 0 bis 100 normiert; ein Bevölkerungsvergleich wird
+            nur dort ausgewiesen, wo veröffentlichte deutsche Normwerte vorliegen — für die übrigen
+            Skalen wäre er erfunden. Die Gewichte sind theoriegeleitete Startwerte und noch nicht
+            empirisch kalibriert; die eigens formulierten Fragen sind noch nicht validiert. Beides
+            steht offen im Quellcode.
+          </p>
+          <ol className="ref-list">
+            {REFERENCES.map((r) => (
+              <li key={r.id}>
+                <span className="ref-cite">
+                  {r.authors} ({r.year}). <em>{r.title}</em>. {r.source}.
+                  {r.doi ? (
+                    <>
+                      {' '}
+                      <a href={`https://doi.org/${r.doi}`} rel="noopener noreferrer" target="_blank">
+                        doi:{r.doi}
+                      </a>
+                    </>
+                  ) : null}
+                </span>
+                <span className="ref-use">{r.usedFor}</span>
+              </li>
+            ))}
+          </ol>
+        </div>
       </section>
 
       <ShareSheet payload={payload ?? ''} shareLink={shareLink} archetypeName={archetype.nameDe} hasWellbeing={!!wellbeing} />
