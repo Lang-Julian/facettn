@@ -1,34 +1,22 @@
-'use client';
+// Report controls. Purely presentational: the open/closed state of the sections
+// lives in ResultView, because reaching into a sibling's DOM to flip <details open>
+// does not survive React re-render.
 
-// Report controls. "Expand all" exists because a collapsed accordion cannot be
-// printed — browsers hide closed <details> content at the rendering level, so the
-// PDF path has to open them first. Both actions are also plain conveniences for a
-// long report.
-
-import { useState } from 'react';
-
-export default function ReportToolbar() {
-  const [allOpen, setAllOpen] = useState(false);
-
-  function setAll(open: boolean) {
-    document.querySelectorAll<HTMLDetailsElement>('details.dim').forEach((d) => {
-      d.open = open;
-    });
-    setAllOpen(open);
-  }
-
-  function printReport() {
-    setAll(true);
-    // Let layout settle before handing off to the print renderer.
-    requestAnimationFrame(() => requestAnimationFrame(() => window.print()));
-  }
-
+export default function ReportToolbar({
+  allOpen,
+  onToggleAll,
+  onPrint,
+}: {
+  allOpen: boolean;
+  onToggleAll: () => void;
+  onPrint: () => void;
+}) {
   return (
     <div className="report-toolbar no-print">
-      <button className="toolbar-btn" onClick={() => setAll(!allOpen)}>
+      <button className="toolbar-btn" onClick={onToggleAll} aria-expanded={allOpen}>
         {allOpen ? 'Alle Abschnitte zuklappen' : 'Alle Abschnitte aufklappen'}
       </button>
-      <button className="toolbar-btn" onClick={printReport}>
+      <button className="toolbar-btn" onClick={onPrint}>
         Als PDF speichern
       </button>
     </div>

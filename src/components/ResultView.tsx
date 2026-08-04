@@ -32,6 +32,37 @@ const BAND_COPY: Record<string, string> = {
 export default function ResultView() {
   const [payload, setPayload] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Section open state is owned here so the toolbar and the print path can both
+  // drive it through React rather than by mutating the DOM.
+  const [openSections, setOpenSections] = useState<Set<string>>(new Set());
+  const [pendingPrint, setPendingPrint] = useState(false);
+
+  const allOpen = DIMENSIONS.every((d) => openSections.has(d.key));
+
+  const toggleAll = () =>
+    setOpenSections(allOpen ? new Set() : new Set(DIMENSIONS.map((d) => d.key)));
+
+  const setSectionOpen = (key: string, open: boolean) =>
+    setOpenSections((prev) => {
+      const next = new Set(prev);
+      if (open) next.add(key);
+      else next.delete(key);
+      return next;
+    });
+
+  const requestPrint = () => {
+    setOpenSections(new Set(DIMENSIONS.map((d) => d.key)));
+    setPendingPrint(true);
+  };
+
+  // Print only after the expanded sections have actually been painted; a closed
+  // <details> renders nothing, so printing too early yields an empty report.
+  useEffect(() => {
+    if (!pendingPrint) return;
+    setPendingPrint(false);
+    const id = requestAnimationFrame(() => window.print());
+    return () => cancelAnimationFrame(id);
+  }, [pendingPrint]);
 
   useEffect(() => {
     const read = () => {
@@ -155,7 +186,7 @@ export default function ResultView() {
         </div>
       ) : null}
 
-      <ReportToolbar />
+      <ReportToolbar allOpen={allOpen} onToggleAll={toggleAll} onPrint={requestPrint} />
 
       <div className="card">
         <h2 style={{ marginTop: 0 }}><span className="sec-num">02</span>Gesamtprofil</h2>
@@ -198,7 +229,12 @@ export default function ResultView() {
           const showLowNote = dim.lowNote && domainScore !== undefined && domainScore < 40;
 
           return (
-            <details className="dim" key={dim.key}>
+            <details
+              className="dim"
+              key={dim.key}
+              open={openSections.has(dim.key)}
+              onToggle={(e) => setSectionOpen(dim.key, e.currentTarget.open)}
+            >
               <summary>
                 <span>
                   {dim.title}
