@@ -8,15 +8,22 @@ const securityHeaders = [
   { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()' },
   {
     key: 'Content-Security-Policy',
+    // Every directive is self-only. This header is part of the privacy claim: a
+    // reviewer can read it and see that no third-party origin is permitted at all,
+    // so "no tracking" is enforced by the browser rather than merely asserted.
+    // Never whitelist an external host here without changing /transparenz too.
     value: [
       "default-src 'self'",
-      // 'unsafe-inline' for Next.js style tags; Plausible domain only if configured.
-      // 'unsafe-eval' ONLY in dev — React Refresh needs it; production stays strict.
-      `script-src 'self' 'unsafe-inline' https://plausible.io${isDev ? " 'unsafe-eval'" : ''}`,
+      // 'unsafe-inline' covers Next.js's inline style and bootstrap tags.
+      // 'unsafe-eval' is dev-only — React Fast Refresh needs it; production stays strict.
+      `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''}`,
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob:",
-      "connect-src 'self' https://plausible.io",
+      "img-src 'self' data:",
+      "connect-src 'self'",
       "font-src 'self'",
+      "form-action 'none'",
+      "base-uri 'self'",
+      "object-src 'none'",
       "frame-ancestors 'none'",
     ].join('; '),
   },

@@ -16,6 +16,8 @@ export const NORMS: NormEntry[] = [
   // (no gender field in the product -> pooled, documented). Sum metric.
   { scaleId: 'phq9', population: 'DE_pooled', normMean: 2.9, normSd: 3.5, source: 'Kocalevent et al. 2013 (gepoolt aus w 3,1/m 2,7; SD 3,5)' },
   { scaleId: 'gad7', population: 'DE_pooled', normMean: 2.95, normSd: 3.35, source: 'Löwe et al. 2008 (gepoolt aus w 3,2/3,5; m 2,7/3,2)' },
-  // ASRS (Mörstedt et al. 2016): Prozentrang-Tabellen sind paywalled — als
-  // percentile_table nachrüsten, sobald das Manual vorliegt (Engine liest Lookup zuerst).
+  // Für ADHS-, Autismus-, Dark-, Bindungs-, Love- und Sensibilitätsskalen liegen
+  // bewusst KEINE Normwerte vor: Die Items sind eigene Formulierungen, publizierte
+  // Normen fremder Instrumente gelten für sie nicht. Diese Skalen weisen deshalb nur
+  // den Rohwert aus. Eigene Perzentile erst nach einer Normierungsstudie ergänzen.
 ];

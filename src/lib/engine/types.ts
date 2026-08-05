@@ -53,7 +53,7 @@ export interface NormEntry {
   population: string;
   normMean: number;
   normSd: number;
-  /** Optional raw-score -> percentile lookup (e.g. ASRS Prozentränge). Keys are raw scores. */
+  /** Optional raw-score -> percentile lookup from a normed sample. Keys are raw scores. */
   percentileTable?: Record<string, number> | null;
   source: string;
 }
