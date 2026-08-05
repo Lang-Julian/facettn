@@ -30,6 +30,8 @@ const securityHeaders = [
 ];
 
 const nextConfig = {
+  // No need to advertise the framework and its version to scanners.
+  poweredByHeader: false,
   async headers() {
     return [{ source: '/(.*)', headers: securityHeaders }];
   },
