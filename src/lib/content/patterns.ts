@@ -153,6 +153,28 @@ const RULES: Rule[] = [
     }),
   },
   {
+    // The conscientiousness items ask exclusively about *externally referenced*
+    // structure: fixed places, deadlines, commitments to other people. Someone with
+    // strong self-directed structure who rejects the conventional kind scores low
+    // by construction. This rule names that configuration — without pretending the
+    // low score is meaningless, because the friction it predicts is real.
+    id: 'own_rules',
+    applies: (s) =>
+      g(s, 'c_ordnung') < 45 &&
+      g(s, 'c_verantwortung') < 45 &&
+      (g(s, 'au_interesse') > 65 || g(s, 'o_neugier') > 65) &&
+      g(s, 'dark_disinh') > 58,
+    build: () => ({
+      title: 'Eigene Ordnung statt fremder',
+      lede: 'Deine Gewissenhaftigkeit ist niedrig — aber deine Ausdauer bei selbstgewählten Themen ist es nicht.',
+      body:
+        'Das ist eine wichtige Unterscheidung, und die Gesamtnote verschluckt sie: Die Fragen dieser Dimension messen konventionelle Struktur — feste Plätze, Fristen, Zusagen an andere. Wer sich stattdessen an selbst gesetzten Regeln orientiert und tief in eigene Themen eintaucht, bekommt hier zwangsläufig einen niedrigen Wert, obwohl von Struktur- oder Antriebslosigkeit keine Rede sein kann. Deine hohen Werte bei Regelferne und Tiefeninteressen zeigen genau dieses Muster.',
+      soWhat:
+        'Der ehrliche Haken: Für andere ist der Unterschied unsichtbar. Ob eine Frist reißt, weil dir Struktur fehlt oder weil du eine andere Priorität gesetzt hast, kommt beim Gegenüber identisch an. Der wirksamste Hebel ist deshalb nicht mehr Disziplin, sondern Ansage — kommunizieren, was du wann nicht machst, statt es offen zu lassen.',
+      weight: 82,
+    }),
+  },
+  {
     id: 'conscientious_chaos',
     applies: (s) => g(s, 'c_ordnung') < 40 && g(s, 'c_verantwortung') > 62,
     build: () => ({

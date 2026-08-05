@@ -79,7 +79,7 @@ export const DIMENSIONS: DimensionContent[] = [
     means: 'Wie du mit Verpflichtungen und Struktur umgehst.',
     meansNot: 'Wie klug oder wie fleißig du bist — Motivation hängt stark vom Thema ab.',
     lowNote:
-      'Niedrige Werte gehen häufig mit Flexibilität und Spontaneität einher. Der Preis ist Reibung mit Terminen und Systemen; der Gewinn ist Beweglichkeit, wenn Pläne platzen.',
+      'Niedrige Werte gehen häufig mit Flexibilität und Spontaneität einher. Der Preis ist Reibung mit Terminen und Systemen; der Gewinn ist Beweglichkeit, wenn Pläne platzen. Wichtig zur Einordnung: Diese Fragen messen ausschließlich konventionelle, nach außen gerichtete Struktur — feste Plätze, Fristen, Zusagen an andere. Wer nach selbst gesetzten Regeln arbeitet und darin sehr konsequent ist, landet hier trotzdem niedrig. Der Wert sagt also etwas über die Passung zu fremden Systemen, nicht über deine innere Ordnung.',
     tips: [
       'Externe Struktur schlägt Willenskraft: ein einziger Ort für alle Zusagen.',
       'Große Aufgaben in Schritte zerlegen, die in einer Sitzung fertig werden.',
