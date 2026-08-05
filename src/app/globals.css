@@ -8,7 +8,7 @@
   --surface: #ffffff;
   --ink: #1a1926;
   --ink-soft: #5d5c6e;
-  --ink-faint: #9a99ab;
+  --ink-faint: #6f6e80; /* WCAG AA: 4.85:1 auf --bg, 4.98:1 auf --surface */
   --hairline: #e9e8ef;
   --accent: #4442c8;
   --accent-soft: #eeeefb;
@@ -992,4 +992,86 @@ code {
   .score-bar-track { background: #ddd !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 
   .site-footer { border-top: 1px solid #ccc; font-size: 8.5pt; }
+}
+
+/* --- Accessibility ------------------------------------------------------- */
+
+/* Visually hidden but available to screen readers. Used for the fieldset legend
+   that carries the question text. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: absolute;
+  left: 8px;
+  top: -60px;
+  z-index: 100;
+  padding: 12px 20px;
+  background: var(--ink);
+  color: #fff;
+  border-radius: 0 0 8px 8px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: top 0.15s ease;
+}
+.skip-link:focus { top: 0; }
+
+#inhalt:focus { outline: none; }
+
+/* The question is a heading that receives focus on advance; it must not look
+   like an editable or clickable control when it does. */
+.question-text:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 6px;
+  border-radius: 6px;
+}
+
+.likert-option { justify-content: flex-start; }
+.likert-label { flex: 1; }
+
+/* Number-key affordance. Hidden on touch, where there is no keyboard. */
+.likert-key {
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--ink-faint);
+  border: 1px solid var(--hairline);
+  border-radius: 5px;
+  padding: 2px 7px;
+  min-width: 22px;
+  text-align: center;
+}
+.kbd-hint {
+  font-size: 0.8rem;
+  color: var(--ink-faint);
+  margin: 12px 0 0;
+}
+.kbd-hint kbd {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  border: 1px solid var(--hairline);
+  border-radius: 4px;
+  padding: 1px 6px;
+  background: var(--surface);
+}
+@media (hover: none) and (pointer: coarse) {
+  .likert-key, .kbd-hint { display: none; }
+}
+
+/* Windows high-contrast / forced-colors: keep meaning visible when the palette
+   is replaced by system colours. */
+@media (forced-colors: active) {
+  .score-bar-fill, .facet-segment-fill { background: Highlight; }
+  .score-bar-track, .facet-segment { border: 1px solid CanvasText; }
+  .card, details.dim, .likert-option { border: 1px solid CanvasText; }
+  .likert-option:has(input:checked) { outline: 2px solid Highlight; }
 }

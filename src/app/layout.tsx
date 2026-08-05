@@ -26,6 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="de">
       <body>
+        <a href="#inhalt" className="skip-link">Zum Inhalt springen</a>
         <header className="site-header">
           <Link href="/" className="wordmark">Facettn</Link>
           <nav aria-label="Hauptnavigation">
@@ -33,7 +34,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Link href="/test">Test</Link>
           </nav>
         </header>
-        {children}
+        <div id="inhalt" tabIndex={-1}>{children}</div>
         <footer className="site-footer">
           <p>{DISCLAIMER_FOOTER}</p>
           <p style={{ marginTop: 12 }}>

@@ -1,12 +1,20 @@
 'use client';
 
-// Accessible Likert input: native radios in a fieldset (arrow keys switch options,
-// tab switches groups). NO auto-advance on keyboard focus — an explicit "Weiter"
-// button appears once a value is chosen, so keyboard/screenreader users are never
-// pushed forward by mere focus movement. Pointer taps advance directly (mobile UX)
-// after a brief confirmation flash. Intensity dots make the scale readable at a glance.
+// The answer control. Accessibility is the whole design here, not a layer on top:
+// a 125-item questionnaire is only usable by keyboard and screen-reader users if
+// answering costs one keystroke.
+//
+// - Native radios inside a fieldset, so arrow keys move between options and the
+//   group is announced as a group. The legend carries the QUESTION text, because
+//   a screen reader reads the legend with every option — "Antwort auswählen" would
+//   force the user to re-read the question separately for all 125 items.
+// - Number keys 1–5 pick and advance directly. This is the fastest path for
+//   keyboard users and for anyone with limited motor control.
+// - Pointer taps advance after a short confirmation flash. Keyboard selection does
+//   NOT auto-advance: moving through options with arrow keys must be explorable
+//   without committing, so an explicit "Weiter" button is always reachable.
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface Option {
   value: number;
@@ -15,11 +23,13 @@ interface Option {
 
 export default function LikertScale({
   name,
+  question,
   options,
   value,
   onSelect,
 }: {
   name: string;
+  question: string;
   options: Option[];
   value?: number;
   onSelect: (value: number) => void;
@@ -27,8 +37,32 @@ export default function LikertScale({
   const [selected, setSelected] = useState<number | undefined>(value);
   const [confirming, setConfirming] = useState(false);
   const byPointer = useRef(false);
+  const groupRef = useRef<HTMLFieldSetElement>(null);
+
   const maxValue = Math.max(...options.map((o) => o.value));
   const minValue = Math.min(...options.map((o) => o.value));
+
+  // Number-key shortcuts. Ignored while a text field has focus so the compare
+  // page's input keeps working.
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const el = document.activeElement;
+      if (el instanceof HTMLInputElement && el.type !== 'radio') return;
+      if (el instanceof HTMLTextAreaElement) return;
+
+      const n = Number(e.key);
+      if (!Number.isInteger(n)) return;
+      const option = options.find((o, i) => o.value === n || i + 1 === n);
+      if (!option) return;
+      e.preventDefault();
+      setSelected(option.value);
+      setConfirming(true);
+      setTimeout(() => onSelect(option.value), 140);
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [options, onSelect]);
 
   function choose(v: number) {
     setSelected(v);
@@ -40,16 +74,15 @@ export default function LikertScale({
       } catch {
         /* not available */
       }
-      // Brief flash so the selection is visible before advancing.
-      setTimeout(() => onSelect(v), 220);
+      setTimeout(() => onSelect(v), 200);
     }
   }
 
   return (
     <div>
-      <fieldset className="likert" disabled={confirming}>
-        <legend>Antwort auswählen</legend>
-        {options.map((o) => {
+      <fieldset className="likert" ref={groupRef} disabled={confirming}>
+        <legend className="sr-only">{question}</legend>
+        {options.map((o, i) => {
           const intensity = (o.value - minValue) / Math.max(1, maxValue - minValue);
           return (
             <label
@@ -64,18 +97,22 @@ export default function LikertScale({
                 onPointerDown={() => (byPointer.current = true)}
                 onChange={() => choose(o.value)}
               />
-              <span
-                aria-hidden
-                className="likert-dot"
-                style={{ '--fill': intensity } as React.CSSProperties}
-              />
-              {o.label}
+              <span aria-hidden className="likert-dot" style={{ '--fill': intensity } as React.CSSProperties} />
+              <span className="likert-label">{o.label}</span>
+              <kbd className="likert-key" aria-hidden>
+                {i + 1}
+              </kbd>
             </label>
           );
         })}
       </fieldset>
+
+      <p className="kbd-hint" aria-hidden>
+        Tipp: Tasten <kbd>1</kbd>–<kbd>{options.length}</kbd> antworten direkt.
+      </p>
+
       {selected !== undefined && !confirming ? (
-        <button className="btn" style={{ marginTop: 16 }} onClick={() => onSelect(selected)}>
+        <button className="btn" style={{ marginTop: 8 }} onClick={() => onSelect(selected)}>
           Weiter
         </button>
       ) : null}

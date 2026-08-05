@@ -44,6 +44,10 @@ export default function QuizShell() {
   const [hydrated, setHydrated] = useState(false);
   const [resumed, setResumed] = useState(false);
   const questionShownAt = useRef<number>(Date.now());
+  // Focus moves to the question when a new one renders. Without this, keyboard and
+  // screen-reader users stay parked on the old control and never hear the new item.
+  const questionRef = useRef<HTMLHeadingElement>(null);
+  const shouldFocus = useRef(false);
 
   useEffect(() => {
     try {
@@ -127,7 +131,15 @@ export default function QuizShell() {
     }
     setState({ ...state, answers, index: nextIndex, phase: 'questions' });
     questionShownAt.current = Date.now();
+    shouldFocus.current = true;
   }
+
+  useEffect(() => {
+    if (state.phase === 'questions' && shouldFocus.current && questionRef.current) {
+      shouldFocus.current = false;
+      questionRef.current.focus();
+    }
+  });
 
   if (!hydrated) return null;
 
@@ -270,7 +282,7 @@ export default function QuizShell() {
           );
         })}
       </div>
-      <div className="progress-meta">
+      <div className="progress-meta" aria-live="polite" aria-atomic="true">
         <span className="facet-name">
           {BLOCK_META[currentBlock]?.num} · {BLOCK_META[currentBlock]?.name}
         </span>
@@ -285,9 +297,12 @@ export default function QuizShell() {
             Wie oft hast du dich in den letzten zwei Wochen beeinträchtigt gefühlt durch:
           </p>
         ) : null}
-        <p className="question-text">{currentItem.textDe}</p>
+        <h2 className="question-text" tabIndex={-1} ref={questionRef}>
+          {currentItem.textDe}
+        </h2>
         <LikertScale
           name={currentItem.id}
+          question={currentItem.textDe}
           options={options}
           value={state.answers[currentItem.id]}
           onSelect={answer}
