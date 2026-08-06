@@ -28,6 +28,8 @@ interface Spec {
   also?: Load[];
   attentionCheck?: number;
   socialDesirability?: boolean;
+  /** Forced-choice pair: [scaleIdA, labelA, scaleIdB, labelB]. */
+  choice?: [string, string, string, string];
 }
 
 // ---------------------------------------------------------------------------
@@ -46,6 +48,18 @@ const BLOCK_1: Spec[] = [
   { id: 'a4', text: 'Ich sage Leuten ungefiltert, was ich von ihnen halte.', primary: '-a_respekt' },
   { id: 'a5', text: 'Ich gehe erst einmal davon aus, dass Menschen es ehrlich meinen.', primary: 'a_vertrauen' },
   { id: 'a6', text: 'Bei neuen Bekanntschaften rechne ich damit, ausgenutzt zu werden.', primary: '-a_vertrauen' },
+  { id: 'e7', text: 'Meine Freizeit verbringe ich am liebsten mit anderen.', primary: 'e_gesellig' },
+  { id: 'e8', text: 'Ein Abend allein lädt mich mehr auf als eine Party.', primary: '-e_gesellig' },
+  { id: 'e9', text: 'In Diskussionen überlasse ich anderen lieber das Feld.', primary: '-e_durchsetzung' },
+  { id: 'e10', text: 'Ich übernehme selbstverständlich die Rolle, in der entschieden wird.', primary: 'e_durchsetzung' },
+  { id: 'e11', text: 'Ich bin fast immer in Bewegung.', primary: 'e_energie' },
+  { id: 'e12', text: 'Mein Tempo ist eher gemächlich.', primary: '-e_energie' },
+  { id: 'a7', text: 'Wenn jemand Hilfe braucht, biete ich sie von selbst an.', primary: 'a_mitgefuehl' },
+  { id: 'a8', text: 'Die Probleme anderer sind in erster Linie deren Sache.', primary: '-a_mitgefuehl' },
+  { id: 'a9', text: 'Ich achte darauf, niemanden bloßzustellen.', primary: 'a_respekt' },
+  { id: 'a10', text: 'Wenn mich jemand nervt, merkt derjenige das sofort.', primary: '-a_respekt' },
+  { id: 'a11', text: 'Ich leihe Dinge aus, ohne lange nachzudenken.', primary: 'a_vertrauen' },
+  { id: 'a12', text: 'Ich prüfe lieber nach, bevor ich jemandem glaube.', primary: '-a_vertrauen' },
 ];
 
 // ---------------------------------------------------------------------------
@@ -70,6 +84,24 @@ const BLOCK_2: Spec[] = [
   { id: 'o4', text: 'Für Kunst habe ich wenig übrig.', primary: '-o_aesthetik' },
   { id: 'o5', text: 'In meinem Kopf laufen oft ganze Szenen ab.', primary: 'o_fantasie' },
   { id: 'o6', text: 'Ich träume mich gern in andere Welten.', primary: 'o_fantasie' },
+  { id: 'c7', text: 'Bevor ich anfange, räume ich erst auf.', primary: 'c_ordnung' },
+  { id: 'c8', text: 'Ich finde Dinge nur, weil ich weiß, in welchem Haufen sie liegen.', primary: '-c_ordnung' },
+  { id: 'c9', text: 'Ich arbeite auch dann weiter, wenn niemand kontrolliert.', primary: 'c_fleiss' },
+  { id: 'c10', text: 'Neue Ideen reizen mich mehr als das Fertigstellen alter.', primary: '-c_fleiss' },
+  { id: 'c11', text: 'Wenn ich etwas zusage, plane ich es sofort ein.', primary: 'c_verantwortung' },
+  { id: 'c12', text: 'Ich sage Dinge zu und merke später, dass ich sie nicht schaffe.', primary: '-c_verantwortung' },
+  { id: 'n7', text: 'Vor wichtigen Terminen bin ich unruhig.', primary: 'n_angst' },
+  { id: 'n8', text: 'Ungewissheit hält mich selten wach.', primary: '-n_angst' },
+  { id: 'n9', text: 'Manchmal fühlt sich alles sinnlos an.', primary: 'n_nieder' },
+  { id: 'n10', text: 'Ich bin grundsätzlich guter Dinge.', primary: '-n_nieder' },
+  { id: 'n11', text: 'Kleinigkeiten können meine Laune komplett drehen.', primary: 'n_labil' },
+  { id: 'n12', text: 'Meine Grundstimmung bleibt über den Tag hinweg stabil.', primary: '-n_labil' },
+  { id: 'o7', text: 'Ich lese oder höre regelmäßig etwas, nur um es zu verstehen.', primary: 'o_neugier' },
+  { id: 'o8', text: 'Mir reicht, dass etwas funktioniert — das Warum interessiert mich wenig.', primary: '-o_neugier' },
+  { id: 'o9', text: 'Ein gut gestalteter Raum verändert, wie ich mich fühle.', primary: 'o_aesthetik' },
+  { id: 'o10', text: 'Ob etwas schön ist, spielt für mich kaum eine Rolle.', primary: '-o_aesthetik' },
+  { id: 'o11', text: 'Ich male mir Situationen im Voraus lebhaft aus.', primary: 'o_fantasie' },
+  { id: 'o12', text: 'Ich denke selten in Bildern.', primary: '-o_fantasie' },
 ];
 
 // ---------------------------------------------------------------------------
@@ -104,6 +136,17 @@ const BLOCK_3: Spec[] = [
   { id: 'au14', text: 'Ich nehme Aussagen zunächst wörtlich.', primary: 'au_woertlich' },
   { id: 'au15', text: 'Ich wünschte, Menschen würden einfach direkt sagen, was sie meinen.', primary: 'au_woertlich' },
   { id: 'au16', text: 'Nach längerem Kontakt mit Menschen bin ich völlig leer.', primary: 'autism', also: [['e_gesellig', 0.6, -1], ['hsp', 0.5, 1]] },
+  { id: 'ad13', text: 'Ich arbeite konzentriert, auch wenn eine Aufgabe langweilig ist.', primary: '-adhs_unauf' },
+  { id: 'ad14', text: 'Ich kann problemlos lange still sitzen und zuhören.', primary: '-adhs_hyper' },
+  { id: 'au17', text: 'In Gruppen weiß ich intuitiv, was gerade angemessen ist.', primary: '-au_sozial' },
+  { id: 'au18', text: 'Feinheiten entgehen mir häufig.', primary: '-au_detail' },
+  { id: 'au19', text: 'Ich bemerke sofort, wenn jemand etwas verändert hat.', primary: 'au_detail' },
+  { id: 'au20', text: 'Spontane Planänderungen machen mir nichts aus.', primary: '-au_routine' },
+  { id: 'au21', text: 'Lärm und Gewusel stören mich kaum.', primary: '-au_sensorik' },
+  { id: 'au22', text: 'Ich beschäftige mich mit vielem, aber nichts davon besonders tief.', primary: '-au_interesse' },
+  { id: 'au23', text: 'Ich kann über meine Themen sehr lange sprechen.', primary: 'au_interesse' },
+  { id: 'au24', text: 'Zwischen den Zeilen zu lesen fällt mir leicht.', primary: '-au_woertlich' },
+  { id: 'au25', text: 'Redewendungen muss ich mir innerlich übersetzen.', primary: 'au_woertlich' },
 ];
 
 // ---------------------------------------------------------------------------
@@ -136,6 +179,13 @@ const BLOCK_4: Spec[] = [
   { id: 'dg1', text: 'Ich halte mich für fähiger als die meisten in meinem Umfeld.', primary: 'dark_grand', also: [['a_respekt', 0.3, -1]] },
   { id: 'dg2', text: 'Besondere Menschen sollten auch besonders behandelt werden.', primary: 'dark_grand' },
   { id: 'dg3', text: 'Es stört mich, wenn meine Leistung nicht gesehen wird.', primary: 'dark_grand' },
+  { id: 'mk7', text: 'Ich bin überall ziemlich genau derselbe Mensch.', primary: '-masking' },
+  { id: 'ec5', text: 'Ich liege oft daneben, wenn ich einschätze, was jemand denkt.', primary: '-emp_cog' },
+  { id: 'ea5', text: 'Die Gefühle anderer lassen mich meist unberührt.', primary: '-emp_aff' },
+  { id: 'db4', text: 'Vor riskanten Situationen weiche ich lieber zurück.', primary: '-dark_bold' },
+  { id: 'dm4', text: 'Ich verzichte lieber selbst, als jemanden zu übervorteilen.', primary: '-dark_mean' },
+  { id: 'dd4', text: 'Ich denke Entscheidungen gründlich durch, bevor ich handle.', primary: '-dark_disinh' },
+  { id: 'dg4', text: 'Ich sehe mich als einen von vielen.', primary: '-dark_grand' },
 ];
 
 // ---------------------------------------------------------------------------
@@ -153,18 +203,37 @@ const BLOCK_5: Spec[] = [
   { id: 'bs1', text: 'Es fällt mir leicht, mich emotional einzulassen.', primary: 'att_secure', also: [['att_avoid', 0.5, -1]] },
   { id: 'bs2', text: 'Ich kann mich auf nahe Menschen verlassen, ohne mich zu verlieren.', primary: 'att_secure' },
   { id: 'bs3', text: 'Nähe und Eigenständigkeit gehen für mich gut zusammen.', primary: 'att_secure', also: [['att_anx', 0.35, -1]] },
-  { id: 'lk1', text: 'Ehrliche, liebevolle Worte bedeuten mir am meisten.', primary: 'love_klartext' },
-  { id: 'lk2', text: 'Ein aufrichtiges Kompliment trägt mich durch den Tag.', primary: 'love_klartext' },
-  { id: 'lm1', text: 'Ungeteilte gemeinsame Zeit ist für mich der Kern von Nähe.', primary: 'love_momente' },
-  { id: 'lm2', text: 'Lieber ein langer Abend zu zweit als ein großes Geschenk.', primary: 'love_momente', also: [['love_zeichen', 0.3, -1]] },
-  { id: 'la1', text: 'Ich zeige Zuneigung, indem ich anderen praktisch den Rücken freihalte.', primary: 'love_anpacken', also: [['a_mitgefuehl', 0.25, 1]] },
-  { id: 'la2', text: 'Wenn mir jemand ungefragt Arbeit abnimmt, fühle ich mich geliebt.', primary: 'love_anpacken' },
-  { id: 'ln1', text: 'Körperliche Nähe ist für mich eine wichtige Sprache.', primary: 'love_naehe' },
-  { id: 'ln2', text: 'Eine Umarmung sagt mir mehr als viele Sätze.', primary: 'love_naehe' },
-  { id: 'lw1', text: 'Ich blühe auf, wenn wir uns gemeinsam weiterentwickeln.', primary: 'love_wachstum', also: [['o_neugier', 0.25, 1]] },
-  { id: 'lw2', text: 'Beziehungen, in denen niemand mehr dazulernt, langweilen mich.', primary: 'love_wachstum' },
-  { id: 'lz1', text: 'Durchdachte kleine Geschenke berühren mich.', primary: 'love_zeichen' },
-  { id: 'lz2', text: 'Dass jemand sich ein Detail von mir gemerkt hat, bedeutet mir viel.', primary: 'love_zeichen' },
+  { id: 'bx5', text: 'Ich vertraue darauf, dass wichtige Menschen bleiben.', primary: '-att_anx' },
+  { id: 'bv5', text: 'Ich lasse andere nah an mich heran.', primary: '-att_avoid' },
+  { id: 'bs4', text: 'In engen Beziehungen bin ich selten wirklich entspannt.', primary: '-att_secure' },
+];
+
+
+// ---------------------------------------------------------------------------
+// Block 5b — Love Styles as forced choice.
+//
+// Preferences are not agreement. On a Likert scale almost everyone endorses
+// "kind words mean a lot to me", which produced near-flat profiles (75/75/75/…)
+// that discriminated nothing. A full round robin over the six styles forces a
+// ranking instead: each style is compared against every other exactly once, so
+// the score is simply how often it won out of five.
+// ---------------------------------------------------------------------------
+const BLOCK_5B: Spec[] = [
+  { id: 'fc01', text: 'Was würde dir mehr fehlen?', primary: '', choice: ['love_klartext', 'dass jemand ausspricht, was er an dir schätzt', 'love_momente', 'ungeteilte gemeinsame Zeit'] },
+  { id: 'fc02', text: 'Was würde dir mehr fehlen?', primary: '', choice: ['love_anpacken', 'dass dir jemand konkret etwas abnimmt', 'love_klartext', 'dass jemand ausspricht, was er an dir schätzt'] },
+  { id: 'fc03', text: 'Was würde dir mehr fehlen?', primary: '', choice: ['love_klartext', 'dass jemand ausspricht, was er an dir schätzt', 'love_naehe', 'körperliche Nähe'] },
+  { id: 'fc04', text: 'Was würde dir mehr fehlen?', primary: '', choice: ['love_wachstum', 'gemeinsam an etwas zu wachsen', 'love_klartext', 'dass jemand ausspricht, was er an dir schätzt'] },
+  { id: 'fc05', text: 'Was würde dir mehr fehlen?', primary: '', choice: ['love_klartext', 'dass jemand ausspricht, was er an dir schätzt', 'love_zeichen', 'kleine Zeichen, dass jemand an dich gedacht hat'] },
+  { id: 'fc06', text: 'Was würde dir mehr fehlen?', primary: '', choice: ['love_anpacken', 'dass dir jemand konkret etwas abnimmt', 'love_momente', 'ungeteilte gemeinsame Zeit'] },
+  { id: 'fc07', text: 'Was würde dir mehr fehlen?', primary: '', choice: ['love_momente', 'ungeteilte gemeinsame Zeit', 'love_naehe', 'körperliche Nähe'] },
+  { id: 'fc08', text: 'Was würde dir mehr fehlen?', primary: '', choice: ['love_wachstum', 'gemeinsam an etwas zu wachsen', 'love_momente', 'ungeteilte gemeinsame Zeit'] },
+  { id: 'fc09', text: 'Was würde dir mehr fehlen?', primary: '', choice: ['love_momente', 'ungeteilte gemeinsame Zeit', 'love_zeichen', 'kleine Zeichen, dass jemand an dich gedacht hat'] },
+  { id: 'fc10', text: 'Was würde dir mehr fehlen?', primary: '', choice: ['love_naehe', 'körperliche Nähe', 'love_anpacken', 'dass dir jemand konkret etwas abnimmt'] },
+  { id: 'fc11', text: 'Was würde dir mehr fehlen?', primary: '', choice: ['love_anpacken', 'dass dir jemand konkret etwas abnimmt', 'love_wachstum', 'gemeinsam an etwas zu wachsen'] },
+  { id: 'fc12', text: 'Was würde dir mehr fehlen?', primary: '', choice: ['love_zeichen', 'kleine Zeichen, dass jemand an dich gedacht hat', 'love_anpacken', 'dass dir jemand konkret etwas abnimmt'] },
+  { id: 'fc13', text: 'Was würde dir mehr fehlen?', primary: '', choice: ['love_naehe', 'körperliche Nähe', 'love_wachstum', 'gemeinsam an etwas zu wachsen'] },
+  { id: 'fc14', text: 'Was würde dir mehr fehlen?', primary: '', choice: ['love_zeichen', 'kleine Zeichen, dass jemand an dich gedacht hat', 'love_naehe', 'körperliche Nähe'] },
+  { id: 'fc15', text: 'Was würde dir mehr fehlen?', primary: '', choice: ['love_wachstum', 'gemeinsam an etwas zu wachsen', 'love_zeichen', 'kleine Zeichen, dass jemand an dich gedacht hat'] },
 ];
 
 // ---------------------------------------------------------------------------
@@ -183,6 +252,9 @@ const BLOCK_6: Spec[] = [
   { id: 'al2', text: 'Ich merke oft erst spät, dass mich etwas belastet hat.', primary: 'alexithymia' },
   { id: 'al3', text: 'Wenn mich jemand fragt, wie es mir geht, weiß ich es selbst nicht genau.', primary: 'alexithymia' },
   { id: 'al4', text: 'Körperliche Anspannung bemerke ich eher als das Gefühl dahinter.', primary: 'alexithymia' },
+  { id: 'hs5', text: 'Ich bin ziemlich unempfindlich gegenüber Reizen.', primary: '-hsp' },
+  { id: 'rs5', text: 'Kritik perlt an mir ab.', primary: '-rejection_sens' },
+  { id: 'al5', text: 'Ich kann genau benennen, was ich gerade fühle.', primary: '-alexithymia' },
 ];
 
 // ---------------------------------------------------------------------------
@@ -255,7 +327,8 @@ const BLOCKS: { block: number; specs: Spec[]; insert?: Record<number, string> }[
   { block: 2, specs: interleave(BLOCK_2), insert: { 9: 'sd1' } },
   { block: 3, specs: interleave(BLOCK_3), insert: { 12: 'ac1' } },
   { block: 4, specs: interleave(BLOCK_4), insert: { 8: 'sd2', 20: 'ac2' } },
-  { block: 5, specs: interleave(BLOCK_5), insert: { 14: 'sd3' } },
+  { block: 5, specs: interleave(BLOCK_5), insert: { 7: 'sd3' } },
+  { block: 5, specs: BLOCK_5B },
   { block: 6, specs: interleave(BLOCK_6), insert: { 6: 'ac3' } },
 ];
 
@@ -276,9 +349,10 @@ function build(): { items: ItemDef[]; loadings: Loading[] } {
       isAttentionCheck: spec.attentionCheck !== undefined,
       isSocialDesirability: !!spec.socialDesirability,
       module: 'core',
-      responseFormat: 'likert5',
+      responseFormat: spec.choice ? 'choice2' : 'likert5',
       reverse: false, // reversal is expressed as loading direction -1
       expectedValue: spec.attentionCheck,
+      choice: spec.choice,
     });
 
     if (!primaryId) return; // attention checks measure nothing
@@ -300,6 +374,14 @@ function build(): { items: ItemDef[]; loadings: Loading[] } {
   };
 
   for (const { block, specs, insert } of BLOCKS) {
+    // An index past the end of the block would drop the item without a trace.
+    for (const idx of Object.keys(insert ?? {})) {
+      if (Number(idx) >= specs.length) {
+        throw new Error(
+          `insert index ${idx} exceeds block ${block} (${specs.length} items) — item would be lost`,
+        );
+      }
+    }
     const withChecks: Spec[] = [];
     specs.forEach((s, i) => {
       const injected = insert?.[i];

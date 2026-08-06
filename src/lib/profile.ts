@@ -6,6 +6,7 @@ import {
   attachmentStyleFromScores,
   computePercentiles,
   computeScaleScores,
+  computeForcedChoice,
   computeWellbeing,
   evaluateValidity,
   resolveArchetype,
@@ -45,7 +46,15 @@ export function buildProfile(
     bands[s.scaleId] = assignBand(s.score100);
   }
 
+  // Love styles come from the forced-choice block, not the Likert matrix.
+  const forced = computeForcedChoice(answers, ITEMS);
+  for (const [id, v] of Object.entries(forced)) {
+    scores[id] = v;
+    bands[id] = assignBand(v);
+  }
+
   const percentiles = computePercentiles(scaleScores, NORMS);
+  for (const [id, v] of Object.entries(forced)) percentiles[id] = v;
 
   const validity = evaluateValidity({
     responses: answers,

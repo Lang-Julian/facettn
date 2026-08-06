@@ -2,7 +2,7 @@
 
 export type ScaleId = string;
 
-export type ResponseFormat = 'likert5' | 'phq4';
+export type ResponseFormat = 'likert5' | 'phq4' | 'choice2';
 export type ItemModule = 'core' | 'wellbeing';
 
 export interface ItemDef {
@@ -25,6 +25,8 @@ export interface ItemDef {
   reverse: boolean;
   /** For attention checks: the answer the instruction asks for. */
   expectedValue?: number;
+  /** Forced-choice pair: [scaleIdA, labelA, scaleIdB, labelB]. Answer 1 = A, 2 = B. */
+  choice?: [string, string, string, string];
 }
 
 export interface Loading {

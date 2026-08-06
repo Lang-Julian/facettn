@@ -83,8 +83,11 @@ export default function ResultView() {
   const profile: Profile | null = useMemo(() => {
     if (!payload) return null;
     try {
-      const { answers } = decodePayload(payload);
-      return buildProfile(answers);
+      const { answers, medianResponseMs } = decodePayload(payload);
+      // One synthetic timing sample per answer: evaluateValidity only needs the
+      // median, and the link deliberately carries nothing finer than a bucket.
+      const times = medianResponseMs !== null ? Object.keys(answers).map(() => medianResponseMs) : [];
+      return buildProfile(answers, times);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Der Link konnte nicht gelesen werden.');
       return null;
@@ -248,6 +251,7 @@ export default function ResultView() {
 
                 {dim.domainId ? (
                   <ScoreBar
+                    scaleId={dim.domainId}
                     label={SCALE_BY_ID.get(dim.domainId)?.nameDe ?? dim.title}
                     score={scores[dim.domainId] ?? 0}
                     band={bands[dim.domainId]}
@@ -262,6 +266,7 @@ export default function ResultView() {
                   {dim.scaleIds.map((id) => (
                     <ScoreBar
                       key={id}
+                      scaleId={id}
                       label={SCALE_BY_ID.get(id)?.nameDe ?? id}
                       blurb={SCALE_BY_ID.get(id)?.blurb}
                       score={scores[id] ?? 0}

@@ -19,6 +19,7 @@ import type { ItemDef, Loading } from './types';
 import { ITEMS, LOADINGS, PHQ9_ITEM_IDS, GAD7_ITEM_IDS, CORE_ITEMS } from '@/lib/seed/items';
 import { ARCHETYPES } from '@/lib/seed/archetypes';
 import { SCALES } from '@/lib/seed/scales';
+import { itemsFor } from '@/lib/precision';
 
 const item = (id: string, over: Partial<ItemDef> = {}): ItemDef => ({
   id,
@@ -270,20 +271,38 @@ describe('seed integrity', () => {
     const core = ITEMS.filter((i) => i.module === 'core');
     const substantive = core.filter((i) => !i.isAttentionCheck && !i.isSocialDesirability);
     // Depth is the product promise — guard against silently shrinking the pool.
-    expect(substantive.length).toBeGreaterThanOrEqual(110);
+    expect(substantive.length).toBeGreaterThanOrEqual(160);
     expect(core.filter((i) => i.isAttentionCheck)).toHaveLength(3);
     expect(core.filter((i) => i.isSocialDesirability)).toHaveLength(3);
     expect(ITEMS.filter((i) => i.module === 'wellbeing')).toHaveLength(16);
   });
 
-  it('every facet scale is measured by at least two items', () => {
-    const perScale = new Map<string, number>();
+  it('every reported scale rests on at least four items', () => {
+    // Four is the floor at which the display may show a number at all
+    // (lib/precision.ts). Below it the result would be false precision.
+    for (const s of SCALES) {
+      if (s.dimensionGroup === 'wellbeing' || s.dimensionGroup === 'validity') continue;
+      expect(itemsFor(s.id), `scale ${s.id} has only ${itemsFor(s.id)} items`).toBeGreaterThanOrEqual(4);
+    }
+  });
+
+  it('every reported scale has at least one reverse-keyed item', () => {
+    // Without a counter-keyed item a scale cannot separate the trait from a general
+    // tendency to agree. Forced-choice scales are exempt: a pairing has no polarity.
+    const neg = new Map<string, number>();
     for (const l of LOADINGS) {
-      if (l.weight === 1) perScale.set(l.scaleId, (perScale.get(l.scaleId) ?? 0) + 1);
+      if (l.weight === 1 && l.direction === -1) neg.set(l.scaleId, (neg.get(l.scaleId) ?? 0) + 1);
     }
     for (const s of SCALES) {
-      if (s.dimensionGroup === 'wellbeing') continue;
-      expect(perScale.get(s.id) ?? 0, `scale ${s.id} needs >= 2 primary items`).toBeGreaterThanOrEqual(2);
+      if (s.dimensionGroup === 'wellbeing' || s.dimensionGroup === 'validity') continue;
+      if (s.dimensionGroup === 'love') continue;
+      expect(neg.get(s.id) ?? 0, `scale ${s.id} has no reverse-keyed item`).toBeGreaterThanOrEqual(1);
+    }
+  });
+
+  it('forced choice is a full round robin: every love style has five duels', () => {
+    for (const s of SCALES.filter((x) => x.dimensionGroup === 'love')) {
+      expect(itemsFor(s.id), `${s.id} duels`).toBe(5);
     }
   });
 
@@ -305,7 +324,9 @@ describe('seed integrity', () => {
   it('every substantive core item has at least one loading', () => {
     const loaded = new Set(LOADINGS.map((l) => l.itemId));
     for (const i of ITEMS) {
-      if (i.module === 'core' && !i.isAttentionCheck) {
+      // Attention checks measure nothing, and forced-choice items are scored by
+      // duel wins rather than through the loading matrix.
+      if (i.module === 'core' && !i.isAttentionCheck && i.responseFormat !== 'choice2') {
         expect(loaded.has(i.id), `item ${i.id} has no loading`).toBe(true);
       }
     }

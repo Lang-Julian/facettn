@@ -273,10 +273,10 @@ export const DIMENSIONS: DimensionContent[] = [
   {
     key: 'love',
     title: 'Love Styles',
-    standfirst: 'Sechs Arten, Zuneigung zu geben und zu empfangen.',
+    standfirst: 'Sechs Arten, Zuneigung zu geben und zu empfangen — per Zwangswahl gemessen.',
     scaleIds: ['love_klartext', 'love_momente', 'love_anpacken', 'love_naehe', 'love_wachstum', 'love_zeichen'],
     explanation:
-      'Ein eigenes Sechs-Faktoren-Modell: Klartext (Worte), Momente (gemeinsame Zeit), Anpacken (Taten), Nähe (Berührung), Wachstum (gemeinsame Entwicklung) und Zeichen (kleine Gesten). Dein Ranking zeigt, welche Sprache bei dir am stärksten ankommt. Der praktische Nutzen liegt weniger in der eigenen Rangfolge als im Abgleich: Die meisten Menschen geben in ihrer eigenen Lieblingssprache — und wundern sich, dass es nicht ankommt.',
+      'Ein eigenes Sechs-Faktoren-Modell: Klartext (Worte), Momente (gemeinsame Zeit), Anpacken (Taten), Nähe (Berührung), Wachstum (gemeinsame Entwicklung) und Zeichen (kleine Gesten). Diese Dimension wird nicht über Zustimmung gemessen, sondern über Zwangswahl: Jede Sprache trat gegen jede andere genau einmal an, der Wert ist die Trefferquote aus fünf Duellen. Der Grund ist methodisch — bei „liebevolle Worte bedeuten mir viel“ stimmen fast alle zu, was ein flaches Profil ohne Aussage ergibt. Erst der erzwungene Verzicht zeigt eine echte Rangfolge. Der praktische Nutzen liegt im Abgleich: Die meisten Menschen geben in ihrer eigenen Lieblingssprache — und wundern sich, dass es nicht ankommt.',
     means: 'Welche Form von Zuneigung dich am zuverlässigsten erreicht.',
     meansNot: 'Eine feste Kategorie. Die Rangfolge verschiebt sich mit Lebensphasen und Beziehungen.',
     tips: [

@@ -70,7 +70,7 @@ export function computeScaleScores(
     const value = resp[l.itemId];
     if (value === undefined) continue;
     const item = itemById.get(l.itemId);
-    if (item && item.responseFormat !== 'likert5') continue; // wellbeing is scored separately
+    if (item && item.responseFormat !== 'likert5') continue; // wellbeing and forced choice are scored separately
     const v = effectiveValue(value, item, l.direction);
     const acc = byScale.get(l.scaleId) ?? { raw: 0, min: 0, max: 0, wSum: 0 };
     acc.raw += v * l.weight;
@@ -275,6 +275,34 @@ export function computeMatch(a: MatchProfile, b: MatchProfile): MatchResult {
     attachScore,
     loveOverlap: round2(loveOverlap),
   };
+}
+
+/**
+ * Forced-choice scoring. Each pair is a head-to-head; a style's score is the share
+ * of its duels that it won. With a full round robin every style is compared the
+ * same number of times, so the result is an honest ranking rather than a set of
+ * agreement ratings that all drift high.
+ */
+export function computeForcedChoice(
+  resp: ResponseSet,
+  items: ItemDef[],
+): Record<string, number> {
+  const wins = new Map<string, number>();
+  const duels = new Map<string, number>();
+  for (const item of items) {
+    if (item.responseFormat !== 'choice2' || !item.choice) continue;
+    const [scaleA, , scaleB] = item.choice;
+    for (const id of [scaleA, scaleB]) duels.set(id, (duels.get(id) ?? 0) + 1);
+    const answer = resp[item.id];
+    if (answer !== 1 && answer !== 2) continue;
+    const winner = answer === 1 ? scaleA : scaleB;
+    wins.set(winner, (wins.get(winner) ?? 0) + 1);
+  }
+  const out: Record<string, number> = {};
+  for (const [id, total] of duels) {
+    out[id] = total > 0 ? round2((100 * (wins.get(id) ?? 0)) / total) : 0;
+  }
+  return out;
 }
 
 /** PHQ-9 / GAD-7 are scored as plain sums (0–3 metric), separate from the likert engine. */

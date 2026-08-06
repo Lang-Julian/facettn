@@ -16,11 +16,14 @@ import {
 } from '@/lib/content/copy';
 import { encodePayload } from '@/lib/share/payload';
 import LikertScale from './LikertScale';
+import ChoiceScale from './ChoiceScale';
 
 const STORAGE_KEY = 'facettn:quiz:v2';
 
 interface QuizState {
   answers: Record<string, number>;
+  /** Milliseconds per answer, used only to derive one coarse median for the link. */
+  times: Record<string, number>;
   index: number;
   wellbeing: 'pending' | 'accepted' | 'skipped';
   phase: 'intro' | 'questions' | 'motivator' | 'wellbeing-optin';
@@ -33,6 +36,7 @@ const SECONDS_PER_ITEM = 7;
 
 const initialState: QuizState = {
   answers: {},
+  times: {},
   index: 0,
   wellbeing: 'pending',
   phase: 'intro',
@@ -95,8 +99,14 @@ export default function QuizShell() {
   }, [flow, state.index]);
 
   const finish = useCallback(
-    (answers: Record<string, number>) => {
-      const payload = encodePayload(answers);
+    (answers: Record<string, number>, times: Record<string, number>) => {
+      const values = Object.values(times).filter((t) => t > 0).sort((a, b) => a - b);
+      const median = values.length
+        ? values.length % 2
+          ? values[(values.length - 1) / 2]
+          : (values[values.length / 2 - 1] + values[values.length / 2]) / 2
+        : null;
+      const payload = encodePayload(answers, median);
       try {
         localStorage.removeItem(STORAGE_KEY);
       } catch {
@@ -110,6 +120,7 @@ export default function QuizShell() {
   function answer(value: number) {
     if (!currentItem) return;
     const answers = { ...state.answers, [currentItem.id]: value };
+    const times = { ...state.times, [currentItem.id]: Date.now() - questionShownAt.current };
 
     const nextIndex = state.index + 1;
     const nextItem = flow[nextIndex];
@@ -117,19 +128,19 @@ export default function QuizShell() {
     const allDone = nextIndex >= flow.length;
 
     if (allDone || (coreDone && state.wellbeing === 'skipped')) {
-      finish(answers);
+      finish(answers, times);
       return;
     }
     if (coreDone && state.wellbeing === 'pending') {
-      setState({ ...state, answers, index: nextIndex, phase: 'wellbeing-optin' });
+      setState({ ...state, answers, times, index: nextIndex, phase: 'wellbeing-optin' });
       return;
     }
     if (nextItem && nextItem.block !== currentItem.block) {
-      setState({ ...state, answers, index: nextIndex, phase: 'motivator' });
+      setState({ ...state, answers, times, index: nextIndex, phase: 'motivator' });
       questionShownAt.current = Date.now();
       return;
     }
-    setState({ ...state, answers, index: nextIndex, phase: 'questions' });
+    setState({ ...state, answers, times, index: nextIndex, phase: 'questions' });
     questionShownAt.current = Date.now();
     shouldFocus.current = true;
   }
@@ -240,7 +251,7 @@ export default function QuizShell() {
         <div style={{ textAlign: 'center' }}>
           <button
             className="link-quiet"
-            onClick={() => finish(state.answers)}
+            onClick={() => finish(state.answers, state.times)}
           >
             Überspringen und Ergebnis ansehen
           </button>
@@ -300,13 +311,24 @@ export default function QuizShell() {
         <h2 className="question-text" tabIndex={-1} ref={questionRef}>
           {currentItem.textDe}
         </h2>
-        <LikertScale
-          name={currentItem.id}
-          question={currentItem.textDe}
-          options={options}
-          value={state.answers[currentItem.id]}
-          onSelect={answer}
-        />
+        {currentItem.choice ? (
+          <ChoiceScale
+            name={currentItem.id}
+            question={currentItem.textDe}
+            optionA={currentItem.choice[1]}
+            optionB={currentItem.choice[3]}
+            value={state.answers[currentItem.id]}
+            onSelect={answer}
+          />
+        ) : (
+          <LikertScale
+            name={currentItem.id}
+            question={currentItem.textDe}
+            options={options}
+            value={state.answers[currentItem.id]}
+            onSelect={answer}
+          />
+        )}
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

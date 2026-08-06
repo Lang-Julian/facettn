@@ -1075,3 +1075,30 @@ code {
   .card, details.dim, .likert-option { border: 1px solid CanvasText; }
   .likert-option:has(input:checked) { outline: 2px solid Highlight; }
 }
+
+/* Precision disclosure: what the number does and does not claim. */
+.score-bar-precision {
+  font-size: 0.78rem;
+  color: var(--ink-faint);
+  margin: 4px 0 0;
+  font-style: italic;
+}
+/* A band-only scale gets a hatched track, so the eye does not read the bar edge
+   as a precise position either. */
+.score-bar-track.approximate {
+  background: repeating-linear-gradient(
+    90deg,
+    var(--hairline) 0 4px,
+    transparent 4px 8px
+  );
+}
+
+/* Forced-choice options carry sentences, not scale labels — give them room. */
+.likert-option.choice-option {
+  min-height: 72px;
+  align-items: flex-start;
+  padding-top: 16px;
+  padding-bottom: 16px;
+  line-height: 1.45;
+}
+.choice-option .likert-dot { margin-top: 3px; }

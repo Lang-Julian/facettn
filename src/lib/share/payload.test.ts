@@ -7,10 +7,18 @@ import {
   PAYLOAD_VERSION,
   stripWellbeing,
 } from './payload';
-import { PAYLOAD_ORDER_CORE, PAYLOAD_ORDER_WELLBEING } from '@/lib/seed/items';
+import { ITEMS, PAYLOAD_ORDER_CORE, PAYLOAD_ORDER_WELLBEING } from '@/lib/seed/items';
 
+const FORMAT = new Map(ITEMS.map((i) => [i.id, i.responseFormat]));
+
+// Forced-choice items only accept 1 or 2, so a generator has to respect the format.
 const coreAnswers = (fn: (i: number) => number = (i) => (i % 5) + 1) =>
-  Object.fromEntries(PAYLOAD_ORDER_CORE.map((id, i) => [id, fn(i)]));
+  Object.fromEntries(
+    PAYLOAD_ORDER_CORE.map((id, i) => [
+      id,
+      FORMAT.get(id) === 'choice2' ? (i % 2) + 1 : fn(i),
+    ]),
+  );
 const wellbeingAnswers = (fn: (i: number) => number = (i) => i % 4) =>
   Object.fromEntries(PAYLOAD_ORDER_WELLBEING.map((id, i) => [id, fn(i)]));
 
@@ -29,9 +37,30 @@ describe('payload codec', () => {
     expect(decoded.hasWellbeing).toBe(true);
   });
 
-  it('is one readable digit per answer', () => {
+  it('is one readable digit per answer plus a meta digit', () => {
     const payload = encodePayload(coreAnswers(() => 3));
-    expect(payload).toBe(`${PAYLOAD_VERSION}.${'3'.repeat(PAYLOAD_ORDER_CORE.length)}`);
+    const [version, core, meta] = payload.split('.');
+    expect(version).toBe(PAYLOAD_VERSION);
+    expect(core).toHaveLength(PAYLOAD_ORDER_CORE.length);
+    expect(meta).toMatch(/^[0-9]$/);
+  });
+
+  it('round-trips the response-time bucket', () => {
+    const payload = encodePayload(coreAnswers(), 2600);
+    const decoded = decodePayload(payload);
+    // Stored as a bucket, so the value returns as that bucket's midpoint.
+    expect(decoded.medianResponseMs).toBeGreaterThan(2000);
+    expect(decoded.medianResponseMs).toBeLessThan(3100);
+  });
+
+  it('omits timing gracefully when it was never measured', () => {
+    expect(decodePayload(encodePayload(coreAnswers())).medianResponseMs).toBeNull();
+  });
+
+  it('rejects a Likert value on a forced-choice item', () => {
+    const answers = coreAnswers();
+    const fcId = PAYLOAD_ORDER_CORE.find((id) => FORMAT.get(id) === 'choice2')!;
+    expect(() => encodePayload({ ...answers, [fcId]: 5 })).toThrow(PayloadError);
   });
 
   it('stays short enough for a URL', () => {
@@ -50,7 +79,7 @@ describe('payload codec', () => {
   });
 
   it('rejects a foreign version rather than misreading it', () => {
-    const payload = encodePayload(coreAnswers()).replace('v1.', 'v2.');
+    const payload = encodePayload(coreAnswers()).replace('v2.', 'v3.');
     expect(() => decodePayload(payload)).toThrow(/andere[nr]? Version/i);
   });
 
