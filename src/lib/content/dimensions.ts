@@ -129,7 +129,7 @@ export const DIMENSIONS: DimensionContent[] = [
     title: 'ADHS-Züge',
     standfirst: 'Aufmerksamkeit als Frage von Faszination, nicht von Willen.',
     domainId: 'adhs',
-    scaleIds: ['adhs_unauf', 'adhs_hyper'],
+    scaleIds: ['adhs_unauf', 'adhs_hyper', 'attn_challenge'],
     explanation:
       'Zwei Kerne, die getrennt betrachtet gehören: Unaufmerksamkeit (Fokus halten, Details abschließen, Dinge wiederfinden) und innere Unruhe mit Impulsivität (Bewegungsdrang, Ungeduld, Handeln vor Denken). Viele Menschen haben deutlich mehr vom einen als vom anderen — die stille, unaufmerksame Ausprägung wird im Alltag am häufigsten übersehen, weil sie niemanden stört. Aufmerksamkeit ist hier keine Frage von Anstrengung, sondern von Interesse: Bei fesselnden Dingen ist Hyperfokus möglich, bei langweiligen versagt die Steuerung.',
     strengths: ['Ideenreichtum', 'Hyperfokus', 'Energie in Krisen', 'Querdenken', 'Spontaneität'],
@@ -285,6 +285,34 @@ export const DIMENSIONS: DimensionContent[] = [
     ],
   },
   {
+    key: 'perfectionism',
+    title: 'Anspruch an dich selbst',
+    standfirst: 'Zwei Arten von Perfektionismus, die sich völlig verschieden auswirken.',
+    scaleIds: ['perf_self', 'perf_social'],
+    explanation:
+      'Perfektionismus ist keine Einheit, und die Unterscheidung ist folgenreich. Eigener Anspruch bedeutet: Du setzt dir selbst hohe Maßstäbe, weil du es so willst. Erwarteter Anspruch bedeutet: Du spürst, dass andere Fehlerlosigkeit von dir verlangen und dein Wert davon abhängt. Die Forschung findet für beide sehr verschiedene Folgen — der eigene Anspruch hängt mit Leistung und Ausdauer zusammen, der erwartete dagegen mit Depressivität, niedrigem Selbstwert und in Meta-Analysen sogar mit Suizidgedanken. Wer hoch auf beidem liegt, trägt eine doppelte Last; wer nur hohen eigenen Anspruch hat, meist eine produktive.',
+    strengths: ['Hohe Standards', 'Gründlichkeit', 'Ausdauer bei Qualität'],
+    means: 'Woher der Druck kommt, unter dem du arbeitest.',
+    meansNot: 'Dass hohe Ansprüche ein Problem sind. Entscheidend ist die Quelle, nicht die Höhe.',
+    lowNote:
+      'Niedrige Werte bedeuten Gelassenheit gegenüber eigenen Fehlern — in kreativen und experimentellen Kontexten ein klarer Vorteil, weil Ausprobieren dann nichts kostet.',
+    myths: [
+      {
+        myth: 'Perfektionismus ist einfach hoher Anspruch.',
+        fact: 'Nur der selbst gesetzte Anspruch verhält sich so. Der von außen erwartete ist der, der mit psychischer Belastung zusammenhängt.',
+      },
+      {
+        myth: 'Perfektionisten liefern bessere Arbeit.',
+        fact: 'Eigener Anspruch hängt mit Leistung zusammen, aber negativ mit Zufriedenheit und Kreativität. Der Preis ist real.',
+      },
+    ],
+    tips: [
+      'Hoher erwarteter Anspruch: prüfe konkret, wer diese Erwartung je ausgesprochen hat. Oft findet sich niemand.',
+      'Lege vor einer Aufgabe fest, was „gut genug“ heißt — und zwar bevor du anfängst, nicht mittendrin.',
+      'Unterscheide Bereiche, in denen Qualität zählt, von solchen, in denen Fertigwerden zählt.',
+    ],
+  },
+  {
     key: 'sensitivity',
     title: 'Sensibilität & Selbstwahrnehmung',
     standfirst: 'Wie viel bei dir ankommt — und wie gut du es benennen kannst.',
@@ -314,6 +342,11 @@ export const OVERLAPS = [
     title: 'Empathie ist nicht gleich Empathie',
     text:
       'Kognitive Empathie (verstehen, was jemand denkt) und affektive Empathie (mitfühlen, was jemand fühlt) sind zwei getrennte Systeme. Bei autistischen Zügen ist die affektive Seite oft intakt oder erhöht, während die kognitive Perspektivübernahme fordernd bleibt. Bei ausgeprägten Dark Traits ist es umgekehrt: gutes Gedankenlesen, wenig Mitschwingen (systematischer Review, Frontiers in Psychiatry 2024). Dazu kommt das Double-Empathy-Problem (Milton 2012): Missverständnisse zwischen autistischen und nicht-autistischen Menschen gehen in beide Richtungen — es ist kein einseitiges Defizit, sondern eine Übersetzungslücke.',
+  },
+  {
+    title: 'Warum Unterforderung wie ADHS aussehen kann',
+    text:
+      'Wer unterfordert ist, wirkt unaufmerksam: Der Kopf driftet ab, Aufgaben werden nicht zu Ende gebracht, die Umgebung nennt es Konzentrationsproblem. In der Fachliteratur ist das ein bekanntes Zuordnungsproblem — Schätzungen zufolge erfüllen 25 bis 50 Prozent der hochbegabten Kinder mit ADHS-Diagnose die Kriterien bei genauer Prüfung nicht. Dieser Test kann und will das nicht entscheiden. Er misst aber eine Sache, die dabei hilft: ob deine Konzentration mit steigendem Anspruch besser wird. Bewusst nicht gefragt ist, ob Interesse hilft — das tut es bei ADHS nämlich auch, Hyperfokus ist geradezu ein Kennzeichen. Nur Schwierigkeit ist der Punkt, an dem sich die beiden Erklärungen unterscheiden. Und selbst dann bleibt es ein Hinweis, keine Antwort: Ein Fragebogen kann Intelligenz nicht messen, Selbsteinschätzungen korrelieren mit gemessenem IQ nur zu etwa r = 0,30.',
   },
   {
     title: 'Warum Facetten mehr sagen als Gesamtwerte',

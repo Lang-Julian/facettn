@@ -36,6 +36,48 @@ interface Rule {
 
 const RULES: Rule[] = [
   {
+    // The one rule that touches the giftedness question — and deliberately stops
+    // short of it. It reports a MECHANISM (does difficulty help?) and never awards
+    // a label, because a questionnaire cannot measure cognitive ability:
+    // self-assessed intelligence correlates with measured IQ at only about r = .30.
+    // It also requires intact everyday reliability: broad executive difficulty
+    // points away from under-challenge as the explanation.
+    id: 'challenge_dependent_attention',
+    applies: (s) =>
+      g(s, 'adhs_unauf') > 58 &&
+      g(s, 'attn_challenge') > 65 &&
+      g(s, 'o_neugier') > 60 &&
+      g(s, 'c_verantwortung') > 45,
+    build: () => ({
+      title: 'Deine Konzentration hängt am Anspruch',
+      lede: 'Schwierigere Aufgaben halten dich besser bei der Sache als leichte.',
+      body:
+        'Eine ungewöhnliche Kombination: erhöhte Unaufmerksamkeitswerte, aber Konzentration, die mit steigender Schwierigkeit zunimmt — und daneben eine Verlässlichkeit im Alltag, die intakt ist. Unterforderung erzeugt Verhalten, das von außen wie ein Aufmerksamkeitsproblem aussieht; in der Fachliteratur ist das ein bekanntes Zuordnungsproblem. Entscheidend ist dabei eine Feinheit: Dass Interesse hilft, unterscheidet gar nichts — bei ADHS ist genau das typisch, Hyperfokus gilt als Kennzeichen. Nur dass ausgerechnet Schwierigkeit hilft, zeigt in eine andere Richtung.',
+      soWhat:
+        'Bevor du an deiner Konzentration arbeitest, prüfe das Anforderungsniveau: Wenn ein Umfeld dich unterfordert, ist mehr Disziplin die falsche Stellschraube. Und die ehrliche Grenze dazu — dieser Test misst keine Intelligenz und kann keine Begabung feststellen. Selbsteinschätzungen treffen gemessene Testwerte nur zu etwa r = 0,30. Das hier ist ein Hinweis auf einen möglichen Auslöser, mehr nicht.',
+      weight: 86,
+    }),
+  },
+  {
+    // Socially prescribed perfectionism is the dimension meta-analyses link to
+    // depression, low self-worth and suicidal ideation — unlike the self-oriented
+    // kind, which behaves quite differently. Worth surfacing on its own.
+    id: 'external_perfectionism',
+    applies: (s) => g(s, 'perf_social') > 62,
+    build: (s) => ({
+      title: 'Der Druck kommt von außen',
+      lede:
+        g(s, 'perf_self') > 62
+          ? 'Du trägst hohen eigenen und hohen erwarteten Anspruch gleichzeitig.'
+          : 'Dein Perfektionismus speist sich vor allem aus vermuteten Erwartungen anderer.',
+      body:
+        'Diese Unterscheidung ist folgenreicher, als sie klingt. Selbst gesetzter Anspruch hängt in der Forschung mit Leistung und Ausdauer zusammen. Der von außen erwartete dagegen — das Gefühl, dass andere Fehlerlosigkeit verlangen und der eigene Wert daran hängt — ist die Variante, die in Meta-Analysen mit Depressivität, niedrigem Selbstwert und sogar mit Suizidgedanken einhergeht. Nicht die Höhe des Anspruchs belastet, sondern seine Quelle.',
+      soWhat:
+        'Die wirksamste Prüfung ist banal und unbequem: Schreib auf, wer diese Erwartung konkret ausgesprochen hat. Sehr oft findet sich niemand — dann ist sie eine Annahme über andere und keine Aussage von ihnen.',
+      weight: 84,
+    }),
+  },
+  {
     id: 'audhd',
     applies: (s) => g(s, 'adhs') > 62 && g(s, 'autism') > 62,
     build: () => ({

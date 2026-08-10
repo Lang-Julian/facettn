@@ -102,6 +102,14 @@ const BLOCK_2: Spec[] = [
   { id: 'o10', text: 'Ob etwas schön ist, spielt für mich kaum eine Rolle.', primary: '-o_aesthetik' },
   { id: 'o11', text: 'Ich male mir Situationen im Voraus lebhaft aus.', primary: 'o_fantasie' },
   { id: 'o12', text: 'Ich denke selten in Bildern.', primary: '-o_fantasie' },
+  { id: 'ps1', text: 'Ich setze mir Maßstäbe, die sonst niemand von mir verlangt.', primary: 'perf_self' },
+  { id: 'ps2', text: 'Etwas nur gut zu machen reicht mir nicht.', primary: 'perf_self', also: [['c_fleiss', 0.3, 1]] },
+  { id: 'ps3', text: 'Ich bin schnell zufrieden mit dem, was ich abliefere.', primary: '-perf_self' },
+  { id: 'ps4', text: 'Eigene Fehler gehen mir noch lange nach.', primary: 'perf_self', also: [['n_nieder', 0.3, 1]] },
+  { id: 'pf1', text: 'Ich habe das Gefühl, dass andere Fehlerlosigkeit von mir erwarten.', primary: 'perf_social' },
+  { id: 'pf2', text: 'Wenn mir etwas misslingt, verliere ich in den Augen anderer an Wert.', primary: 'perf_social', also: [['rejection_sens', 0.4, 1]] },
+  { id: 'pf3', text: 'Ich glaube nicht, dass jemand Perfektion von mir erwartet.', primary: '-perf_social' },
+  { id: 'pf4', text: 'Der Druck, dem ich mich ausgesetzt fühle, kommt vor allem von außen.', primary: 'perf_social', also: [['n_angst', 0.3, 1]] },
 ];
 
 // ---------------------------------------------------------------------------
@@ -147,6 +155,10 @@ const BLOCK_3: Spec[] = [
   { id: 'au23', text: 'Ich kann über meine Themen sehr lange sprechen.', primary: 'au_interesse' },
   { id: 'au24', text: 'Zwischen den Zeilen zu lesen fällt mir leicht.', primary: '-au_woertlich' },
   { id: 'au25', text: 'Redewendungen muss ich mir innerlich übersetzen.', primary: 'au_woertlich' },
+  { id: 'ax1', text: 'Wenn eine Aufgabe anspruchsvoller wird, fällt mir das Konzentrieren leichter.', primary: 'attn_challenge' },
+  { id: 'ax2', text: 'Bei zu leichten Aufgaben schweife ich ab, bei schwierigen nicht.', primary: 'attn_challenge' },
+  { id: 'ax3', text: 'Auch anspruchsvolle Aufgaben halte ich schlecht durch, wenn sie mich nicht packen.', primary: '-attn_challenge' },
+  { id: 'ax4', text: 'Ob etwas schwer oder leicht ist, ändert an meiner Konzentration wenig.', primary: '-attn_challenge' },
 ];
 
 // ---------------------------------------------------------------------------

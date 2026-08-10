@@ -79,7 +79,7 @@ describe('payload codec', () => {
   });
 
   it('rejects a foreign version rather than misreading it', () => {
-    const payload = encodePayload(coreAnswers()).replace('v2.', 'v3.');
+    const payload = encodePayload(coreAnswers()).replace('v3.', 'v4.');
     expect(() => decodePayload(payload)).toThrow(/andere[nr]? Version/i);
   });
 

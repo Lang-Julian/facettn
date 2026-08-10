@@ -73,6 +73,12 @@ export const SCALES: ScaleDef[] = [
 
   { id: 'masking', nameDe: 'Masking', dimensionGroup: 'neuro', blurb: 'Der bewusste Aufwand, sozial „normal“ zu wirken.' },
 
+  // Moderator, not a trait: it only carries meaning when attention problems exist
+  // at all. Asks whether *difficulty* improves focus — deliberately not whether
+  // *interest* does, because interest-driven attention is a hallmark of ADHD too
+  // (hyperfocus) and therefore separates nothing.
+  { id: 'attn_challenge', nameDe: 'Anspruchsabhängigkeit der Aufmerksamkeit', dimensionGroup: 'neuro', blurb: 'Ob deine Konzentration mit steigender Schwierigkeit besser wird — oder unabhängig davon bleibt.' },
+
   // ---------- Dark Traits ----------
   { id: 'dark_bold', nameDe: 'Furchtlosigkeit', dimensionGroup: 'dark', blurb: 'Ruhe unter Druck, Lust am Risiko, souveränes Auftreten.' },
   { id: 'dark_mean', nameDe: 'Kühle Durchsetzung', dimensionGroup: 'dark', blurb: 'Eigene Ziele auch dann, wenn andere dabei verlieren.' },
@@ -97,6 +103,9 @@ export const SCALES: ScaleDef[] = [
   { id: 'love_zeichen', nameDe: 'Zeichen', dimensionGroup: 'love', blurb: 'Kleine durchdachte Gesten mit Bedeutung.' },
 
   // ---------- Sensibilität ----------
+  { id: 'perf_self', nameDe: 'Eigener Anspruch', dimensionGroup: 'sensitivity', blurb: 'Maßstäbe, die du selbst setzt — unabhängig davon, was andere verlangen.' },
+  { id: 'perf_social', nameDe: 'Erwarteter Anspruch', dimensionGroup: 'sensitivity', blurb: 'Das Gefühl, dass andere Fehlerlosigkeit von dir erwarten.' },
+
   { id: 'hsp', nameDe: 'Hochsensibilität', dimensionGroup: 'sensitivity', blurb: 'Intensivere Verarbeitung von Reizen und Stimmungen.' },
   { id: 'rejection_sens', nameDe: 'Zurückweisungs-Sensibilität', dimensionGroup: 'sensitivity', blurb: 'Wie stark (vermutete) Ablehnung dich trifft.' },
   { id: 'alexithymia', nameDe: 'Mühe beim Benennen von Gefühlen', dimensionGroup: 'sensitivity', blurb: 'Wie schwer es fällt, eigene Emotionen zu erkennen und in Worte zu fassen.' },

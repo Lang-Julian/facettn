@@ -1,6 +1,6 @@
 // The URL payload codec — this is where "nothing is stored" becomes literally true.
 //
-// A result lives entirely in the URL fragment (`/ergebnis#v2.4231…`). Browsers never
+// A result lives entirely in the URL fragment (`/ergebnis#v3.4231…`). Browsers never
 // transmit the fragment to a server: it is not in the HTTP request line, not in
 // Referer headers, not in access logs. So the link is a complete, portable result
 // that only ever exists on the devices that hold it.
@@ -10,7 +10,7 @@
 // Anyone can decode their own link by hand and see exactly what it contains — which
 // is the entire point of an auditable, open-source instrument.
 //
-//   v2.<core answers><.meta>[.<wellbeing answers>]
+//   v3.<core answers><.meta>[.<wellbeing answers>]
 //
 // `meta` is a single digit carrying the median response time as a coarse bucket.
 // It exists so the "answered very fast" validity hint can actually fire: the result
@@ -22,7 +22,7 @@
 
 import { ITEMS, PAYLOAD_ORDER_CORE, PAYLOAD_ORDER_WELLBEING } from '@/lib/seed/items';
 
-export const PAYLOAD_VERSION = 'v2';
+export const PAYLOAD_VERSION = 'v3';
 
 /** Milliseconds per bucket step; bucket 1 means "under 500 ms per item". */
 const RT_BUCKET_MS = 500;
