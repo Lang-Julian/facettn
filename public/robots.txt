@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+
+# Result and comparison pages carry personal profiles in the URL fragment and are
+# additionally marked noindex in their metadata.
+Disallow: /ergebnis
+Disallow: /vergleich

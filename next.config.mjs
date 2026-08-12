@@ -29,9 +29,25 @@ const securityHeaders = [
   },
 ];
 
+// A fully static export: no server, no runtime, just files. That is the strongest
+// form of the privacy claim — there is no backend that *could* receive anything,
+// and anyone can self-host the result by copying a folder.
+//
+// BASE_PATH covers hosting under a sub-path (e.g. GitHub Pages at /facettn); leave
+// it unset for a custom domain at the root.
+const basePath = process.env.BASE_PATH ?? '';
+
 const nextConfig = {
+  output: 'export',
+  basePath: basePath || undefined,
+  // Static hosts serve /pfad/ as /pfad/index.html.
+  trailingSlash: true,
+  images: { unoptimized: true },
   // No need to advertise the framework and its version to scanners.
   poweredByHeader: false,
+  // NOTE: a static export cannot send headers — the CSP and friends below are only
+  // applied by `next start`. On a static host they must be configured there
+  // (_headers on Netlify/Cloudflare, a meta tag fallback, or the web server).
   async headers() {
     return [{ source: '/(.*)', headers: securityHeaders }];
   },

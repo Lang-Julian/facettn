@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { PAYLOAD_ORDER_CORE } from '@/lib/seed/items';
+import { PAYLOAD_VERSION } from '@/lib/share/payload';
 import { ATTRIBUTIONS } from '@/lib/content/copy';
 import { SCALES } from '@/lib/seed/scales';
 
@@ -53,7 +54,7 @@ export default function TransparenzPage() {
         <p>Dein Ergebnis-Link sieht deshalb so aus:</p>
         <pre className="code-block">
           <code>
-            facettn.de/ergebnis<span className="hl">#v1.4315224…</span>
+            facettn.de/ergebnis<span className="hl">#{PAYLOAD_VERSION}.4315224…</span>
             {'\n'}
             <span className="code-note">└─ nur bis hier sieht der Server</span>
           </code>
@@ -125,6 +126,32 @@ export default function TransparenzPage() {
         {ATTRIBUTIONS.map((a) => (
           <p key={a.slice(0, 30)} style={{ fontSize: '0.92rem' }}>{a}</p>
         ))}
+      </div>
+
+      <div className="card">
+        <h2 style={{ marginTop: 0 }}>Wie gut ist dieser Test wirklich?</h2>
+        <p>
+          Kurz gesagt: sorgfältig konstruiert, aber <strong>nicht validiert</strong>. Das ist ein
+          Unterschied, den die meisten Online-Tests verwischen, und deshalb steht er hier.
+        </p>
+        <p>
+          Erfüllt sind die Voraussetzungen guter Testkonstruktion: mindestens vier Fragen je
+          Skala, ausbalancierte Polung gegen Zustimmungstendenz, Aufmerksamkeitskontrollen,
+          eine Skala für soziale Erwünschtheit, Perzentile nur dort, wo echte deutsche
+          Normwerte existieren, und eine Anzeigegenauigkeit, die sich nach der Fragenzahl
+          richtet statt nach der Rechengenauigkeit.
+        </p>
+        <p>
+          Nicht bestimmt sind dagegen Reliabilität und Validität — also ob die Skalen
+          konsistent messen und ob sie messen, was sie zu messen behaupten. Das ließe sich
+          nur mit einer Stichprobe klären, und die würde dem Versprechen widersprechen, keine
+          Daten zu sammeln. Diese Lücke wird hier benannt statt kaschiert.
+        </p>
+        <p style={{ marginBottom: 0 }}>
+          Das vollständige Testmanual mit Konstruktionsregeln, Auswertungsformeln,
+          Gütekriterien und allen bekannten Schwächen liegt offen im Quellcode-Verzeichnis
+          unter <code>docs/TESTMANUAL.md</code>.
+        </p>
       </div>
 
       <div className="card">
