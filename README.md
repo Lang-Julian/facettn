@@ -147,12 +147,31 @@ src/app/             Startseite, /test, /ergebnis, /vergleich, /transparenz,
 Es gibt kein `api/`-Verzeichnis, keinen Datenbank-Client und kein ORM. Diese Abwesenheit
 ist das Feature. Laufzeit-Abhängigkeiten: `next`, `react`, `react-dom`.
 
+## Rechtsseiten sind ein Gate, kein TODO
+
+Ein öffentlich erreichbares deutschsprachiges Angebot braucht ein vollständiges
+Impressum (§ 5 DDG); ein fehlendes ist ein reales Risiko für die betreibende Person.
+Die Betreiberangaben liegen deshalb als getippte Konfiguration in
+[`src/lib/content/legal.ts`](src/lib/content/legal.ts), und
+[`scripts/check-legal.ts`](scripts/check-legal.ts) **bricht das Deployment ab**,
+solange ein Pflichtfeld leer ist:
+
+```bash
+npm run check:legal    # beendet sich mit Fehler, solange unvollständig
+npm run build:public   # Prüfung + Build, wird vom Pages-Workflow genutzt
+```
+
+Lokal baut und läuft die Seite weiterhin mit Platzhalter-Rechtsseiten, die Entwicklung
+ist also nicht behindert. Blockiert wird nur der Weg, der sie öffentlich erreichbar
+macht — genau dort entsteht die Pflicht. Diese eine Datei auszufüllen ist der einzige
+Schritt zwischen lokalem und öffentlichem Build.
+
 ## Entwicklung
 
 ```bash
 npm ci
 npm run dev        # http://localhost:3000
-npm test           # 48 Unit-Tests
+npm test           # 53 Unit-Tests
 npm run typecheck && npm run lint && npm run build
 ```
 

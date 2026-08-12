@@ -10,7 +10,9 @@
     "typecheck": "tsc --noEmit",
     "lint": "next lint",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "check:legal": "tsx scripts/check-legal.ts",
+    "build:public": "npm run check:legal && next build"
   },
   "dependencies": {
     "next": "^15.5.0",

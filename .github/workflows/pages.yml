@@ -1,8 +1,11 @@
 # Deploy the static export to GitHub Pages.
 #
-# The app is a pure static site — this workflow just builds it and uploads the
-# folder. BASE_PATH is set because Pages serves the project under /<repo> unless a
-# custom domain is configured; with a custom domain, remove it.
+# The app is a pure static site — this workflow builds it and uploads the folder.
+#
+# The job is gated on the repository being public: GitHub Pages cannot be enabled
+# for a private repository on the free plan, so without this guard every push to a
+# private repo would produce a red failing run. It skips silently instead and starts
+# working by itself the moment the repository is made public.
 name: Deploy to GitHub Pages
 
 on:
@@ -21,6 +24,8 @@ concurrency:
 
 jobs:
   build:
+    # Skip while the repo is private; run on demand or once it is public.
+    if: github.event_name == 'workflow_dispatch' || github.event.repository.private == false
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -29,10 +34,19 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+      # Refuses to continue if the Impressum is incomplete. A publicly reachable
+      # German-language site without one is a real legal exposure, so the deploy
+      # path is gated rather than trusted to be remembered.
+      - run: npm run check:legal
       - run: npm run build
         env:
+          # Pages serves the project under /<repo>. Remove this once a custom
+          # domain points at the site root.
           BASE_PATH: /facettn
       - uses: actions/configure-pages@v5
+        with:
+          # Turn Pages on via the API rather than requiring a manual setting.
+          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: out
