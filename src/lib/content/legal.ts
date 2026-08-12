@@ -31,11 +31,16 @@ export interface Operator {
  * inventing legal contact data would be worse than leaving it visibly unset.
  */
 export const OPERATOR: Operator = {
-  name: '',
-  street: '',
+  name: 'Julian Lang',
+  street: 'Kantstr. 23',
+  // OFFEN: Die angegebene PLZ 73374 gehört nicht zu Esslingen am Neckar (dort
+  // 73728–73734) — vermutlich ein Zahlendreher. Bewusst leer gelassen, statt eine
+  // falsche Angabe in ein Rechtsdokument zu schreiben.
   postalCode: '',
-  city: '',
+  city: 'Esslingen am Neckar',
   country: 'Deutschland',
+  // OFFEN: § 5 DDG verlangt eine elektronische Kontaktadresse. Nicht die
+  // AI-Z-Adresse verwenden — das würde das Privatprojekt mit dem Arbeitgeber verknüpfen.
   email: '',
 };
 

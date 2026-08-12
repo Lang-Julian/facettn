@@ -96,8 +96,20 @@ export default function CompareView() {
       <h1>Euer Vergleich</h1>
 
       <div className="card" style={{ textAlign: 'center' }}>
-        <span className="kicker">Übereinstimmung</span>
+        <span className="kicker">Passungs-Einschätzung</span>
         <div className="match-total">{insights.total} %</div>
+        <p style={{ fontSize: '0.9rem', color: 'var(--ink-soft)', margin: '4px 0 0' }}>
+          Das ist <strong>kein Ähnlichkeitswert</strong>. Nur zwei der fünf Bestandteile
+          vergleichen euch miteinander; die anderen drei bewerten Eigenschaften, die die
+          Forschung unabhängig von Ähnlichkeit mit Beziehungszufriedenheit verknüpft —
+          gemeinsame Gelassenheit, Verträglichkeit und Bindungspassung.
+        </p>
+        <p style={{ fontSize: '0.9rem', color: 'var(--ink-soft)' }}>
+          Deshalb kann ein sehr ähnliches Paar niedriger liegen als ein ungleiches: Zwei
+          Menschen mit demselben unsicheren Bindungsmuster haben es real schwerer als zwei
+          verschiedene, von denen einer sicher gebunden ist. Die Aufschlüsselung unten zeigt,
+          woher der Wert kommt.
+        </p>
         <p style={{ fontSize: '0.9rem', color: 'var(--ink-faint)', marginBottom: 0 }}>
           Eine Orientierung, keine Prognose. Die Forschung zu Partnerpassung findet reale,
           aber kleine Effekte — kein Algorithmus ersetzt echtes Kennenlernen.
