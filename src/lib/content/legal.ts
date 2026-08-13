@@ -33,15 +33,10 @@ export interface Operator {
 export const OPERATOR: Operator = {
   name: 'Julian Lang',
   street: 'Kantstr. 23',
-  // OFFEN: Die angegebene PLZ 73374 gehört nicht zu Esslingen am Neckar (dort
-  // 73728–73734) — vermutlich ein Zahlendreher. Bewusst leer gelassen, statt eine
-  // falsche Angabe in ein Rechtsdokument zu schreiben.
-  postalCode: '',
+  postalCode: '73734',
   city: 'Esslingen am Neckar',
   country: 'Deutschland',
-  // OFFEN: § 5 DDG verlangt eine elektronische Kontaktadresse. Nicht die
-  // AI-Z-Adresse verwenden — das würde das Privatprojekt mit dem Arbeitgeber verknüpfen.
-  email: '',
+  email: 'jal.studios@proton.me',
 };
 
 /** Hosting provider, named in the privacy policy as a processor. */
