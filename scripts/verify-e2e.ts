@@ -7,6 +7,9 @@
 //
 // Run: npx tsx scripts/verify-e2e.ts
 
+import { readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { sitePath } from '../src/lib/urls';
 import { ITEMS, CORE_ITEMS, PAYLOAD_ORDER_CORE, PAYLOAD_ORDER_WELLBEING, PHQ9_ITEM_IDS } from '../src/lib/seed/items';
 import { SCALES } from '../src/lib/seed/scales';
 import { ARCHETYPES } from '../src/lib/seed/archetypes';
@@ -230,6 +233,33 @@ const r1 = JSON.stringify(buildProfile(a1).scores);
 const r2 = JSON.stringify(buildProfile(a1).scores);
 ok('Gleiche Antworten ergeben gleiches Ergebnis', r1 === r2);
 ok('Link ist reproduzierbar', encodePayload(a1, 3000) === encodePayload(a1, 3000));
+
+// ───────────────────────────────────────────────────────────── Link-Konstruktion
+section('Link-Konstruktion');
+// The live site once shipped share links without the base path: every copied link
+// 404'd, and it was invisible locally because the base path is empty in dev. Next's
+// <Link> prepends it, hand-written strings do not — so hand-written strings are
+// banned outside src/lib/urls.ts.
+{
+  const dir = 'src/components';
+  const files = readdirSync(dir).filter((f) => f.endsWith('.tsx'));
+  const offenders: string[] = [];
+  for (const f of files) {
+    const src = readFileSync(join(dir, f), 'utf8');
+    // <Link> is exempt: Next prepends the base path to it. Blank the Link tags out
+    // (attributes may wrap across lines) and flag whatever raw href is left, plus
+    // any direct use of location.origin, which never carries the base path.
+    const scanned = src.replace(/<Link\b[^>]*>/g, (m) => m.replace(/[^\n]/g, ' '));
+    scanned.split('\n').forEach((line, i) => {
+      if (/href=\{`\/|href="\/|location\.origin/.test(line)) offenders.push(`${f}:${i + 1}`);
+    });
+  }
+  ok('Kein Komponenten-Link umgeht sitePath()/siteUrl()', offenders.length === 0, offenders.join(', '));
+  ok('sitePath erzwingt abschliessenden Schraegstrich', sitePath('/ergebnis').endsWith('/ergebnis/'));
+  ok('sitePath traegt den Base-Path', sitePath('/x') === `${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/x/`);
+  const withBase = '/facettn/vergleich/';
+  ok('Vergleichs-Pfad unter Base-Path korrekt', withBase === `/facettn${sitePath('/vergleich').replace(process.env.NEXT_PUBLIC_BASE_PATH ?? '', '')}`);
+}
 
 console.log(`\n${'─'.repeat(58)}`);
 if (fails === 0) console.log(`✓ ${checks} Prüfungen bestanden, 0 Fehler`);

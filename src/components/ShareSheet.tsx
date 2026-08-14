@@ -6,6 +6,7 @@
 // must never travel in a link handed to someone else.
 
 import { useState } from 'react';
+import { sitePath, siteUrl } from '@/lib/urls';
 
 export default function ShareSheet({
   payload,
@@ -19,9 +20,8 @@ export default function ShareSheet({
   hasWellbeing: boolean;
 }) {
   const [copied, setCopied] = useState<'own' | 'share' | null>(null);
-  const origin = typeof window !== 'undefined' ? window.location.origin : '';
-  const ownUrl = `${origin}/ergebnis#${payload}`;
-  const shareUrl = `${origin}/ergebnis#${shareLink}`;
+  const ownUrl = siteUrl('/ergebnis', payload);
+  const shareUrl = siteUrl('/ergebnis', shareLink);
 
   async function copy(url: string, which: 'own' | 'share') {
     try {
@@ -77,7 +77,7 @@ export default function ShareSheet({
         {copied === 'share' ? 'Kopiert ✓' : 'Ergebnis teilen'}
       </button>
       <div style={{ textAlign: 'center' }}>
-        <a className="link-quiet" href={`/vergleich#${shareLink}`}>
+        <a className="link-quiet" href={`${sitePath('/vergleich')}#${shareLink}`}>
           Mit jemandem vergleichen
         </a>
       </div>

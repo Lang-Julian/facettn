@@ -10,6 +10,7 @@ import { buildProfile } from '@/lib/profile';
 import { decodePayload, extractPayload } from '@/lib/share/payload';
 import { buildMatchInsights, type MatchInsights } from '@/lib/match';
 import ResultRadar from './ResultRadar';
+import { sitePath } from '@/lib/urls';
 
 export default function CompareView() {
   const [ownPayload, setOwnPayload] = useState<string | null>(null);
@@ -38,7 +39,7 @@ export default function CompareView() {
     setError(null);
     const extracted = extractPayload(otherInput);
     if (!extracted) {
-      setError('Das sieht nicht nach einem Facettn-Ergebnis-Link aus. Er enthält ein #-Zeichen, gefolgt von „v1.“ und einer langen Ziffernfolge.');
+      setError('Das sieht nicht nach einem Facettn-Ergebnis-Link aus. Er enthält ein #-Zeichen, gefolgt von „v3.“ und einer langen Ziffernfolge.');
       return;
     }
     if (extracted === ownPayload) {
@@ -76,7 +77,7 @@ export default function CompareView() {
             type="text"
             value={otherInput}
             onChange={(e) => setOtherInput(e.target.value)}
-            placeholder="https://…/ergebnis#v1.43125…"
+            placeholder="https://…/ergebnis/#v3.43125…"
           />
           {error ? <p role="alert" style={{ color: 'var(--danger)' }}>{error}</p> : null}
           <button className="btn" style={{ marginTop: 12 }} disabled={!otherInput.trim()} onClick={submit}>
@@ -157,7 +158,7 @@ export default function CompareView() {
       ) : null}
 
       <div style={{ textAlign: 'center', marginTop: 24 }}>
-        <a className="link-quiet" href={`/ergebnis#${ownPayload}`}>← Zurück zu deinem Ergebnis</a>
+        <a className="link-quiet" href={`${sitePath('/ergebnis')}#${ownPayload}`}>← Zurück zu deinem Ergebnis</a>
       </div>
     </div>
   );

@@ -40,6 +40,9 @@ const basePath = process.env.BASE_PATH ?? '';
 const nextConfig = {
   output: 'export',
   basePath: basePath || undefined,
+  // Hand-built URLs (share links) need the base path at runtime; <Link> gets it
+  // automatically, plain strings do not. See src/lib/urls.ts.
+  env: { NEXT_PUBLIC_BASE_PATH: basePath },
   // Static hosts serve /pfad/ as /pfad/index.html.
   trailingSlash: true,
   images: { unoptimized: true },
