@@ -17,6 +17,15 @@ export interface Reference {
 
 export const REFERENCES: Reference[] = [
   {
+    id: 'deyoung2007',
+    authors: 'DeYoung, C. G., Quilty, L. C., & Peterson, J. B.',
+    year: '2007',
+    title: 'Between facets and domains: 10 aspects of the Big Five',
+    source: 'Journal of Personality and Social Psychology, 93(5), 880–896',
+    doi: '10.1037/0022-3514.93.5.880',
+    usedFor: 'Aufspaltung der Gewissenhaftigkeit in Beharrlichkeit und Ordnung, die getrennt interpretiert werden.',
+  },
+  {
     id: 'danner2019',
     authors: 'Danner, D., Rammstedt, B., Bluemke, M., et al.',
     year: '2019',

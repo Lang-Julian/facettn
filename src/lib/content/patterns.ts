@@ -195,6 +195,34 @@ const RULES: Rule[] = [
     }),
   },
   {
+    // Conscientiousness is the domain where item wording and construct part ways:
+    // self-report items operationalise it as conformity to *externally given*
+    // structure — plans, tidiness, deadlines, rules. Someone who runs on
+    // self-authored systems answers those honestly low while being highly effective.
+    // The two aspects diverge empirically (DeYoung, Quilty & Peterson, 2007), and
+    // industriousness, not orderliness, is the one that tracks performance.
+    // Averaging them into a domain score destroys exactly the information that
+    // matters, so this rule reports the split instead.
+    //
+    // Both scales carry only four items (coarse resolution), so the gap has to be
+    // wide enough to survive rounding — 20 points, not 10.
+    id: 'conscientiousness_aspect_split',
+    applies: (s) =>
+      g(s, 'c_fleiss') - g(s, 'c_ordnung') >= 20 &&
+      g(s, 'c_fleiss') >= 55 &&
+      // own_rules covers the same terrain in more detail; do not say it twice.
+      !(g(s, 'c_ordnung') < 45 && g(s, 'c_verantwortung') < 45 && g(s, 'dark_disinh') > 58),
+    build: (s) => ({
+      title: 'Beharrlichkeit ohne Ordnungsliebe',
+      lede: 'Du bleibst dran, ohne dass äußere Ordnung dabei eine Rolle spielt — das sind zwei verschiedene Dinge, auch wenn sie meist in einen Topf geworfen werden.',
+      body:
+        `Gewissenhaftigkeit zerfällt in zwei Anteile, die nur lose zusammenhängen: Beharrlichkeit (dranbleiben, fertig machen) und Ordnung (Struktur, Pläne, feste Abläufe). Bei dir liegen sie rund ${Math.round((g(s, 'c_fleiss') - g(s, 'c_ordnung')) / 5) * 5} Punkte auseinander. Die Fragen zur Ordnung erfassen Übereinstimmung mit fremd gesetzter Struktur — Listen, Termine, aufgeräumte Ablage. Wer nach eigenen Systemen arbeitet, kreuzt dort wahrheitsgemäß niedrig an, ohne deshalb seltener zu Ergebnissen zu kommen. Von den beiden Anteilen ist es die Beharrlichkeit, die in der Forschung mit tatsächlicher Leistung zusammenhängt; Ordnung hängt eher mit Konventionalität zusammen.`,
+      soWhat:
+        'Praktisch heißt das: Ein Gesamtwert für Gewissenhaftigkeit ist bei dir die unbrauchbarere Zahl — sieh dir die beiden Skalen einzeln an. Und der Hebel ist nicht, dir konventionelle Ordnung anzugewöhnen, sondern deine eigenen Abläufe für andere lesbar zu machen. Die Reibung entsteht selten bei dir, sondern bei denen, die nicht sehen können, worauf dein Ablauf beruht.',
+      weight: 74,
+    }),
+  },
+  {
     // The conscientiousness items ask exclusively about *externally referenced*
     // structure: fixed places, deadlines, commitments to other people. Someone with
     // strong self-directed structure who rejects the conventional kind scores low

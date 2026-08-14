@@ -230,7 +230,9 @@ architektonisch abgesichert und darf nicht abgeschwächt werden.
 
 ---
 
-## 5. Sonderfall: Anspruchsabhängigkeit der Aufmerksamkeit
+## 5. Sonderfälle bei der Interpretation
+
+### 5.1 Anspruchsabhängigkeit der Aufmerksamkeit
 
 Diese Skala verdient eine eigene Erläuterung, weil sie leicht missverstanden wird.
 
@@ -254,6 +256,41 @@ Selbstwert- und nicht als Fähigkeitsvariable. Zudem überschätzen Männer sich
 systematisch stärker als Frauen, sodass eine Begabungsskala per Selbstauskunft
 Männer bevorzugt hochstufen würde. Das Instrument vergibt daher **kein Etikett**,
 sondern beschreibt einen möglichen Auslöser.
+
+### 5.2 Gewissenhaftigkeit misst Konformität mit fremder Struktur
+
+Gewissenhaftigkeit ist die Domäne mit der größten Lücke zwischen Konstrukt und
+Item-Formulierung. Selbstberichtsitems operationalisieren sie fast durchgängig als
+**Übereinstimmung mit von außen gesetzter Struktur**: Pläne einhalten, aufräumen,
+pünktlich sein, Regeln befolgen, Listen führen. Wer wirksam arbeitet, aber nach
+**selbst gebauten Systemen** statt nach konventionellen, kreuzt bei diesen
+Formulierungen wahrheitsgemäß niedrig an — und wird von der Domänenauswertung
+unterschätzt.
+
+Die Domäne zerfällt empirisch in zwei Aspekte, die nur mäßig korrelieren und
+unterschiedliche Kriterien vorhersagen (DeYoung, Quilty & Peterson, 2007):
+
+| Aspekt | Skala hier | Was er erfasst |
+|---|---|---|
+| Industriousness | `c_fleiss` (Beharrlichkeit) | Dranbleiben, Fertigstellen, Zielverfolgung |
+| Orderliness | `c_ordnung` (Ordnung) | Struktur, Planung, Ordnungspräferenz |
+
+Von beiden ist **Beharrlichkeit** der Aspekt, der Leistungskriterien vorhersagt;
+Ordnung hängt stärker mit Konventionalität und Traditionsorientierung zusammen. Ein
+Profil mit hoher Beharrlichkeit und niedriger Ordnung ist deshalb **kein
+abgeschwächtes Gewissenhaftigkeitsprofil**, sondern ein anderes — und in
+Leistungskontexten oft das günstigere.
+
+**Konsequenz für die Auswertung:** Der Domänenwert `big5_C` ist bei divergierenden
+Aspekten *nicht* die aussagekräftigste Zahl; die beiden Skalenwerte sind es. Der
+Bericht weist deshalb die Aspekte einzeln aus und benennt die Divergenz, statt sie
+zu mitteln.
+
+**Bekannte Grenze:** Diese Verzerrung lässt sich durch Item-Formulierung mildern,
+aber nicht beseitigen, solange das Verfahren Selbstauskunft bleibt. Ein Gegencheck
+über Außenkriterien (tatsächliche Ergebnisse, Fremdeinschätzung) ist dem Verfahren
+grundsätzlich überlegen und wird im Bericht als solcher benannt. Der Ausweg ist
+**nicht**, dem Testergebnis gegen das eigene Ergebniswissen zu glauben.
 
 ---
 
