@@ -15,6 +15,7 @@ import {
   WELLBEING_INTRO,
 } from '@/lib/content/copy';
 import { encodePayload } from '@/lib/share/payload';
+import { reconcileStoredState } from '@/lib/quiz/resume';
 import LikertScale from './LikertScale';
 import ChoiceScale from './ChoiceScale';
 
@@ -31,6 +32,8 @@ interface QuizState {
 
 const CORE_FLOW = ITEMS.filter((i) => i.module === 'core');
 const WELLBEING_FLOW = ITEMS.filter((i) => i.module === 'wellbeing');
+const CORE_IDS = CORE_FLOW.map((i) => i.id);
+const WELLBEING_IDS = WELLBEING_FLOW.map((i) => i.id);
 const CORE_BLOCKS = [1, 2, 3, 4, 5, 6];
 const SECONDS_PER_ITEM = 7;
 
@@ -57,14 +60,25 @@ export default function QuizShell() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
-        const stored = JSON.parse(raw) as QuizState;
-        if (stored.phase !== 'intro' && Object.keys(stored.answers ?? {}).length > 0) {
-          setState(stored);
+        // Never trust the stored index: this storage outlives deploys, so it may
+        // refer to an item list that no longer exists. reconcileStoredState checks
+        // it against the current questionnaire and returns a state that is actually
+        // completable, or null when nothing is worth restoring.
+        const restored = reconcileStoredState(JSON.parse(raw), CORE_IDS, WELLBEING_IDS);
+        if (restored) {
+          setState(restored);
           setResumed(true);
+        } else {
+          localStorage.removeItem(STORAGE_KEY);
         }
       }
     } catch {
       /* corrupted or unavailable storage — start fresh */
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+      } catch {
+        /* ignore */
+      }
     }
     setHydrated(true);
   }, []);

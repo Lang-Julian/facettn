@@ -38,7 +38,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           httpEquiv="Content-Security-Policy"
           content={[
             "default-src 'self'",
-            "script-src 'self' 'unsafe-inline'",
+            // 'unsafe-eval' is dev-only: React Fast Refresh evaluates code at
+            // runtime and the dev server is unusable without it. The production
+            // build never carries it — keep this conditional, do not flatten it.
+            `script-src 'self' 'unsafe-inline'${
+              process.env.NODE_ENV === 'development' ? " 'unsafe-eval'" : ''
+            }`,
             "style-src 'self' 'unsafe-inline'",
             "img-src 'self' data:",
             "connect-src 'self'",

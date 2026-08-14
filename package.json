@@ -12,8 +12,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "check:legal": "tsx scripts/check-legal.ts",
-    "build:public": "npm run check:legal && next build",
-    "verify": "tsx scripts/verify-e2e.ts"
+    "build:public": "npm run check:legal && next build && npm run check:build",
+    "verify": "tsx scripts/verify-e2e.ts",
+    "check:build": "tsx scripts/check-build.ts"
   },
   "dependencies": {
     "next": "^15.5.0",

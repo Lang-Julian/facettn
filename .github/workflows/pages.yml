@@ -38,10 +38,17 @@ jobs:
       # German-language site without one is a real legal exposure, so the deploy
       # path is gated rather than trusted to be remembered.
       - run: npm run check:legal
+      - run: npm test
+      - run: npm run verify
       - run: npm run build
         env:
           # Pages serves the project under /<repo>. Remove this once a custom
           # domain points at the site root.
+          BASE_PATH: /facettn
+      # Assertions on the emitted files, not the source: no 'unsafe-eval' leaking
+      # from the dev-only CSP branch, a CSP on every page, no foreign host in it.
+      - run: npm run check:build
+        env:
           BASE_PATH: /facettn
       - uses: actions/configure-pages@v5
         with:
