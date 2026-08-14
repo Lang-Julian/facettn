@@ -84,7 +84,9 @@ export default function DatenschutzPage() {
           Tracking-Pixel geladen und keine Inhalte von Drittanbietern nachgeladen. Deshalb gibt
           es auch kein Einwilligungsbanner: Es gibt nichts, wozu einzuwilligen wäre. Die
           Content-Security-Policy dieser Seite erlaubt ausschließlich Inhalte von der eigenen
-          Domain — das lässt sich in den Antwort-Headern nachprüfen.
+          Domain; sie steht als <code>meta</code>-Element im Quelltext jeder Seite und lässt sich
+          dort nachlesen. Der beste Beleg bleibt aber der Quelltext selbst: Es wird schlicht
+          nichts von fremden Servern geladen.
         </p>
       </div>
 

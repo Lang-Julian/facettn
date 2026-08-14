@@ -25,6 +25,31 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="de">
+      <head>
+        {/*
+          CSP as a meta tag, not only as a header.
+          A static export cannot send headers, and GitHub Pages ignores the _headers
+          file entirely — so without this the policy would simply not exist on the
+          live site while the privacy pages claim it does. The meta form enforces
+          everything except frame-ancestors, which is header-only; that one is noted
+          as a known limitation rather than silently claimed.
+        */}
+        <meta
+          httpEquiv="Content-Security-Policy"
+          content={[
+            "default-src 'self'",
+            "script-src 'self' 'unsafe-inline'",
+            "style-src 'self' 'unsafe-inline'",
+            "img-src 'self' data:",
+            "connect-src 'self'",
+            "font-src 'self'",
+            "form-action 'none'",
+            "base-uri 'self'",
+            "object-src 'none'",
+          ].join('; ')}
+        />
+        <meta name="referrer" content="strict-origin-when-cross-origin" />
+      </head>
       <body>
         <a href="#inhalt" className="skip-link">Zum Inhalt springen</a>
         <header className="site-header">

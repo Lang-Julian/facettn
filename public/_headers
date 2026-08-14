@@ -1,4 +1,9 @@
 # Security headers for static hosts that read this file (Cloudflare Pages, Netlify).
+#
+# NOTE: GitHub Pages ignores this file — it serves it as a plain asset. The live
+# policy there comes from the meta tag in src/app/layout.tsx instead. Keep both in
+# sync; if the site ever moves to a host that honours _headers, the header form is
+# the stronger one because it also covers frame-ancestors.
 # A static export cannot set headers itself — on nginx/Apache the equivalent has to
 # be configured in the server config instead. Every directive is self-only: no
 # third-party origin is permitted at all, which is what makes the privacy claim on
